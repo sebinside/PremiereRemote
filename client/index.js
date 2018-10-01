@@ -7,7 +7,7 @@ const express = require(dir + "/node_modules/express/index.js");
 const endpoints = [
     ["sendNameAlert", "sendNameAlert"],
     ["sendAlert", "sendAlert"]
-    ];
+];
 
 function init() {
 
