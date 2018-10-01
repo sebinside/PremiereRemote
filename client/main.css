@@ -1,0 +1,19 @@
+* {
+    font-family: sans-serif;
+    background: #232323;
+    overflow-y: hidden;
+    color: #BBBBBB;
+    font-size: 11pt;
+}
+
+#statusContainer {
+    font-weight: bold;
+}
+
+.red {
+    color: red;
+}
+
+.green {
+    color:green;
+}
