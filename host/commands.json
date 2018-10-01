@@ -1,0 +1,13 @@
+{
+    "ahk" : {
+        "functionName": "sendNameAlert",
+        "parameters" : []
+    },
+    "alert" : {
+        "functionName": "sendAlert",
+        "parameters": [
+            "content",
+            "nextcontent"
+        ]
+    }
+}

@@ -3,16 +3,9 @@ const csInterface = new CSInterface();
 const loc = window.location.pathname;
 const dir = decodeURI(loc.substring(1, loc.lastIndexOf('/')));
 const express = require(dir + "/node_modules/express/index.js");
-
-const endpoints = [
-    ["sendNameAlert", "sendNameAlert"],
-    ["sendAlert", "sendAlert"]
-    ];
+const endpoints = require(dir + "/../host/commands.json");
 
 function init() {
-
-    // Create endpoint map
-    const endpointMap = new Map(endpoints);
 
     // Setup server
     const app = express();
@@ -20,18 +13,39 @@ function init() {
     const router = express.Router();
 
     // Setup endpoints
-    endpointMap.forEach(function(value, key) {
+    Object.keys(endpoints).forEach(function(key) {
+        const value = endpoints[key];
         router.get('/' + key, function(req, res) {
 
-            let params = [];
+            // Count request query parameters
+            let propertyCount = 0;
             for (const propName in req.query) {
                 if (req.query.hasOwnProperty(propName)) {
-                    params.push(req.query[propName]);
+                    propertyCount++;
                 }
             }
 
-            res.json({ message: 'ok.' });
-            executeCommand(value, params);
+            // Extract request query parameters
+            let params = [];
+            for (const id in value.parameters) {
+                const propName = value.parameters[id];
+                if (req.query.hasOwnProperty(propName)) {
+                    params.push(req.query[propName]);
+                } else {
+                    console.log("Param not found: '" + propName + "'");
+                }
+            }
+
+            // Check query parameter count
+            if(value.parameters.length === params.length && params.length === propertyCount) {
+                res.json({ message: 'ok.' });
+
+                // Execute function with given parameters
+                executeCommand(value.functionName, params);
+            } else {
+                res.json({ message: 'error. wrong parameters.' });
+            }
+
         });
     });
 
@@ -59,4 +73,9 @@ function executeCommand(command, params) {
 
     console.log(command);
     csInterface.evalScript(command);
+}
+
+function openHostWindow() {
+    console.log('start "' + dir + '"');
+    require('child_process').exec('start "" "' + dir + '/../host"');
 }
