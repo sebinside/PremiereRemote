@@ -9,5 +9,9 @@
             "content",
             "nextcontent"
         ]
+    },
+    "kill" : {
+        "functionName": "killApp",
+        "parameters": []
     }
 }
