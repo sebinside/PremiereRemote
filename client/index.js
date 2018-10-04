@@ -17,6 +17,11 @@ function init() {
         const value = endpoints[key];
         router.get('/' + key, function(req, res) {
 
+            if (value.functionName === "killApp") {
+                res.json({ message: 'ok.' });
+                csInterface.closeExtension();
+            }
+
             // Count request query parameters
             let propertyCount = 0;
             for (const propName in req.query) {
