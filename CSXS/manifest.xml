@@ -29,7 +29,7 @@
         </Lifecycle>
         <UI>
           <Type>Panel</Type>
-          <Menu>Premiere AHK Framework</Menu>
+          <Menu>AHK2CEP - Premiere</Menu>
           <Geometry>
             <Size>
               <Height>50</Height>

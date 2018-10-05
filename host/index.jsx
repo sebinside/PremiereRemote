@@ -1,12 +1,11 @@
-function sendNameAlert(){
-	alert(app.project.name);
-}
-
-function sendAlert(content, content2) {
-	alert("Content: " + content + ", " + content2);
-}
-
-function killApp() {
-	//alert("Killed");
-	//This will not even be called
-}
+var host = {
+    projectNameAlert: function () {
+        alert(app.project.name);
+    },
+    alert: function (content) {
+        alert("Alert: " + content);
+    },
+    kill: function() {
+        // This method is only there for debugging purposes.
+    }
+};
