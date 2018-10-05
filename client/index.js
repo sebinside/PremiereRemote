@@ -8,7 +8,6 @@ function init() {
 
     // Setup server
     const app = express();
-    const port = SERVER_PORT;
     const router = express.Router();
 
     // Setup endpoints
@@ -65,7 +64,7 @@ function init() {
 
     // Start server
     app.use('/', router);
-    app.listen(port);
+    app.listen(SERVER_PORT);
 
     document.getElementById("statusContainer").innerHTML = "Ready!";
     document.getElementById("statusContainer").className = "green";
