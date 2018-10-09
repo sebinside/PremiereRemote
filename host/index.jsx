@@ -13,22 +13,22 @@ var host = {
     },
     selectSelectedNamedVideoLayer: function (name) {
 
-        var sequence = app.project.activeSequence;
+        const sequence = app.project.activeSequence;
 
         if (sequence) {
 
             // Search all selected video layers
-            for (var i = 0; i < sequence.videoTracks.numTracks; i++) {
+            for (let i = 0; i < sequence.videoTracks.numTracks; i++) {
 
-                var allVideoClips = sequence.videoTracks[i].clips;
-                for (var n = 0; n < allVideoClips.numItems; n++) {
+                const allVideoClips = sequence.videoTracks[i].clips;
+                for (let n = 0; n < allVideoClips.numItems; n++) {
 
-                    var clip = allVideoClips[n];
+                    const clip = allVideoClips[n];
 
                     if (clip.isSelected()) {
 
                         // Maybe, this is the correctly named layer
-                        if (clip.name == name) {
+                        if (clip.name === name) {
                             clip.setSelected(true, true);
                         } else {
                             clip.setSelected(false, true);
@@ -38,13 +38,13 @@ var host = {
             }
 
             // Deselect all audio layers
-            for (var i = 0; i < sequence.audioTracks.numTracks; i++) {
+            for (let i = 0; i < sequence.audioTracks.numTracks; i++) {
 
-                var allAudioClips = sequence.audioTracks[i].clips;
+                const allAudioClips = sequence.audioTracks[i].clips;
 
-                for (var n = 0; n < allAudioClips.numItems; n++) {
+                for (let n = 0; n < allAudioClips.numItems; n++) {
 
-                    var clip = allAudioClips[n];
+                    const clip = allAudioClips[n];
                     clip.setSelected(false, true);
 
                 }
