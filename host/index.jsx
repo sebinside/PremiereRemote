@@ -1,55 +1,87 @@
+/**
+ * ALL functions defined here are visible via the localhost REST-like service.
+ */
 var host = {
+    /**
+     * This method is only there for debugging purposes.
+     */
     kill: function () {
-        // This method is only there for debugging purposes.
     },
+    /**
+     * Mutes an audio track of the active sequence.
+     * @param trackNumber the 0 based audio track number
+     */
     muteAudioTrack: function (trackNumber) { // 0 based
         trackNumber = parseInt(trackNumber);
 
-        const sequence = app.project.activeSequence;
+        var sequence = app.project.activeSequence;
 
         if (trackNumber < sequence.audioTracks.numTracks) {
             sequence.audioTracks[trackNumber].setMute();
         }
     },
+    /**
+     * Selects the proper named video clip of all currently selected clips.
+     * @param name the name of the layer, e.g REC_2153.mp4
+     */
     selectSelectedNamedVideoLayer: function (name) {
 
-        const sequence = app.project.activeSequence;
+        var sequence = app.project.activeSequence;
 
-        if (sequence) {
+        // Search all selected video layers
+        for (var i = 0; i < sequence.videoTracks.numTracks; i++) {
 
-            // Search all selected video layers
-            for (let i = 0; i < sequence.videoTracks.numTracks; i++) {
+            var allVideoClips = sequence.videoTracks[i].clips;
+            for (var n = 0; n < allVideoClips.numItems; n++) {
 
-                const allVideoClips = sequence.videoTracks[i].clips;
-                for (let n = 0; n < allVideoClips.numItems; n++) {
+                var videoClip = allVideoClips[n];
 
-                    const clip = allVideoClips[n];
+                if (videoClip.isSelected()) {
 
-                    if (clip.isSelected()) {
-
-                        // Maybe, this is the correctly named layer
-                        if (clip.name === name) {
-                            clip.setSelected(true, true);
-                        } else {
-                            clip.setSelected(false, true);
-                        }
+                    // Maybe, this is the correctly named layer
+                    if (videoClip.name === name) {
+                        videoClip.setSelected(true, true);
+                    } else {
+                        videoClip.setSelected(false, true);
                     }
                 }
             }
+        }
 
-            // Deselect all audio layers
-            for (let i = 0; i < sequence.audioTracks.numTracks; i++) {
+        // Deselect all audio layers
+        for (var j = 0; j < sequence.audioTracks.numTracks; j++) {
 
-                const allAudioClips = sequence.audioTracks[i].clips;
+            var allAudioClips = sequence.audioTracks[j].clips;
 
-                for (let n = 0; n < allAudioClips.numItems; n++) {
+            for (var k = 0; k < allAudioClips.numItems; k++) {
 
-                    const clip = allAudioClips[n];
-                    clip.setSelected(false, true);
+                var audioClip = allAudioClips[k];
+                audioClip.setSelected(false, true);
 
-                }
             }
         }
+    },
+    /**
+     * Locks a video track of the current sequence.
+     * @param number the 0 based video track number
+     */
+    lockVideoTrack: function (number) {
+        var activeSequence = qe.project.getActiveSequence();
+        var someTrack = activeSequence.getVideoTrackAt(parseInt(number));
+        someTrack.setLock(true);
     }
+};
 
+/**
+ * Define your helping functions here, these are NOT published on localhost.
+ */
+var helper = {};
+
+/**
+ * These functions are only used internally.
+ */
+var framework = {
+    enableQualityEngineering: function () {
+        app.enableQE();
+    }
 };

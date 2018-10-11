@@ -82,4 +82,4 @@ If you want learn more about using AutoHotkey and the Adobe CEP SDK, have a look
 * Taran Van Hermet, a macro specialist: https://www.youtube.com/user/TaranVH
 * And my own twitch channel, were I develop with this techniques, sometimes: https://www.twitch.tv/skate702
 
-If there are more questions, you can concat me on [Twitter](https://twitter.com/skate702) or via [mail](mailto:hi@sebinside.de).
+If there are more questions, you can contact me on [Twitter](https://twitter.com/skate702) or via [mail](mailto:hi@sebinside.de).

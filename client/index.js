@@ -50,10 +50,8 @@ function init() {
 
                 // Check query parameter count
                 if (parameters.length === params.length && params.length === propertyCount) {
-                    res.json({message: 'ok.'});
-
-                    // Execute function with given parameters
-                    executeCommand(key, params);
+                    // Execute function with given parameters (also: result)
+                    executeCommand(key, params, res);
                 } else {
                     res.json({message: 'error. wrong parameters.'});
                 }
@@ -65,6 +63,11 @@ function init() {
     // Start server
     app.use('/', router);
     app.listen(SERVER_PORT);
+
+    // Enable QE
+    if(ENABLE_QE) {
+        csInterface.evalScript("framework.enableQualityEngineering();")
+    }
 
     document.getElementById("statusContainer").innerHTML = "Ready!";
     document.getElementById("statusContainer").className = "green";
@@ -81,7 +84,7 @@ function extractParameters(signature) {
     return Array.prototype.slice.call(result);
 }
 
-function executeCommand(command, params) {
+function executeCommand(command, params, res) {
     console.log("Execute: " + command);
     document.getElementById("lastCommandContainer").innerHTML = command;
 
@@ -93,10 +96,12 @@ function executeCommand(command, params) {
             command += ", ";
         }
     }
-    command += ")";
+    command += ");";
 
     console.log(command);
-    csInterface.evalScript("host." + command);
+    csInterface.evalScript("host." + command, function(functionResult) {
+        res.json({message: 'ok.', result: functionResult});
+    });
 }
 
 function openHostWindow() {
