@@ -25,17 +25,14 @@ var host = {
      * @param name the name of the layer, e.g REC_2153.mp4
      */
     selectSelectedNamedVideoLayer: function (name) {
-
         var sequence = app.project.activeSequence;
 
         // Search all selected video layers
         for (var i = 0; i < sequence.videoTracks.numTracks; i++) {
-
             var allVideoClips = sequence.videoTracks[i].clips;
             for (var n = 0; n < allVideoClips.numItems; n++) {
 
                 var videoClip = allVideoClips[n];
-
                 if (videoClip.isSelected()) {
 
                     // Maybe, this is the correctly named layer
@@ -47,35 +44,101 @@ var host = {
                 }
             }
         }
-
         // Deselect all audio layers
         for (var j = 0; j < sequence.audioTracks.numTracks; j++) {
-
             var allAudioClips = sequence.audioTracks[j].clips;
-
             for (var k = 0; k < allAudioClips.numItems; k++) {
 
                 var audioClip = allAudioClips[k];
                 audioClip.setSelected(false, true);
-
             }
         }
     },
     /**
-     * Locks a video track of the current sequence.
-     * @param number the 0 based video track number
+     * Toogles the lock of a specified track of the current scene.
+     * @param isVideoTrack true, if the specified track is video
+     * @param trackNumber the 0 based track number
      */
-    lockVideoTrack: function (number) {
-        var activeSequence = qe.project.getActiveSequence();
-        var someTrack = activeSequence.getVideoTrackAt(parseInt(number));
-        someTrack.setLock(true);
+    toggleTrackLock: function (isVideoTrack, trackNumber) {
+        var isLocked = this.isTrackLocked(isVideoTrack, trackNumber);
+        this.setTrackLock(isVideoTrack, trackNumber, !isLocked);
+    },
+    /**
+     * Locks or unlocks a specified track of the current scene.
+     * @param isVideoTrack true, if the specified track is video
+     * @param trackNumber the 0 based track number
+     * @param setLocked true, if the track should be locked
+     */
+    setTrackLock: function (isVideoTrack, trackNumber, setLocked) {
+        if (typeof setLocked === "string") {
+            setLocked = (setLocked === "true");
+        }
+
+        helper.getTrackQE(isVideoTrack, trackNumber).setLock(Boolean(setLocked));
+    },
+    /**
+     * Returns, if the specified track is currently locked.
+     * @param isVideoTrack true, if the specified track is video
+     * @param trackNumber the 0 based track number
+     * @returns true, if the track is locked
+     */
+    isTrackLocked: function (isVideoTrack, trackNumber) {
+        return helper.getTrackQE(isVideoTrack, trackNumber).isLocked();
+    },
+    /**
+     * Toggles the lock-state of multiple audio or video tracks.
+     * @param trackNumbers comma separated list of 0 based track descriptors, e.g. "a0,v0,v1"
+     */
+    toggleMultipleTrackLocks: function (trackNumbers) {
+        var descriptors = trackNumbers.split(",");
+
+        for (var i = 0; i < descriptors.length; i++) {
+            var descriptor = descriptors[i];
+            var isVideoTrack = descriptor.charAt(0) === "v";
+            var trackNumber = parseInt(descriptor.charAt(1));
+
+            this.toggleTrackLock(isVideoTrack.toString(), trackNumber.toString());
+        }
+    },
+    /**
+     * Sets the lock-state of multiple audio or video tracks.
+     * @param trackNumbers comma separated list of 0 based track descriptors, e.g. "a0,v0,v1"
+     * @param setLocked true, if the tracks should be locked
+     */
+    setMultipleTrackLocks: function (trackNumbers, setLocked) {
+        var descriptors = trackNumbers.split(",");
+
+        for (var i = 0; i < descriptors.length; i++) {
+            var descriptor = descriptors[i];
+            var isVideoTrack = descriptor.charAt(0) === "v";
+            var trackNumber = parseInt(descriptor.charAt(1));
+
+            this.setTrackLock(isVideoTrack.toString(), trackNumber.toString(), setLocked);
+        }
     }
 };
 
 /**
  * Define your helping functions here, these are NOT published on localhost.
  */
-var helper = {};
+var helper = {
+    /**
+     * Returns the specified track using the QE DOM.
+     * @param isVideoTrack true, if the specified track is video
+     * @param trackNumber the 0 based track number
+     * @returns a track object
+     */
+    getTrackQE: function (isVideoTrack, trackNumber) {
+        var activeSequence = qe.project.getActiveSequence();
+        var track;
+        if (isVideoTrack === "true") {
+            track = activeSequence.getVideoTrackAt(parseInt(trackNumber));
+        } else {
+            track = activeSequence.getAudioTrackAt(parseInt(trackNumber));
+        }
+        return track;
+    },
+};
 
 /**
  * These functions are only used internally.
