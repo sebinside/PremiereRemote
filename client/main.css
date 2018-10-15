@@ -17,3 +17,7 @@
 .green {
     color:green;
 }
+
+#lastCommandContainer {
+    font-size:8pt;
+}
