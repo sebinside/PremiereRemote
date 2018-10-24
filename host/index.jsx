@@ -3,11 +3,6 @@
  */
 var host = {
     /**
-     * This method is only there for debugging purposes.
-     */
-    kill: function () {
-    },
-    /**
      * Mutes an audio track of the active sequence.
      * @param trackNumber the 0 based audio track number
      */

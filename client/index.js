@@ -23,12 +23,6 @@ function init() {
 
             router.get('/' + key, function (req, res) {
 
-                // Special code for faster debugging
-                if (key === "kill") {
-                    res.json({message: 'ok.'});
-                    csInterface.closeExtension();
-                }
-
                 // Count request query parameters
                 let propertyCount = 0;
                 for (const propName in req.query) {
@@ -59,6 +53,14 @@ function init() {
             });
         }
     }
+
+    // Special code for faster debugging
+    csInterface.addEventListener(csInterface.getExtensionID(), function(event) {
+        let confirmEvent = new CSEvent(event.extensionId, event.scope, csInterface.getApplicationID(), csInterface.getExtensionID());
+        confirmEvent.data = 'ok';
+        csInterface.dispatchEvent(confirmEvent);
+        csInterface.closeExtension();
+    });
 
     // Start server
     app.use('/', router);
