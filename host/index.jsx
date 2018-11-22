@@ -146,17 +146,7 @@ var host = {
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var currentPlayheadPosition = currentSequence.getPlayerPosition();
 
-        var markerChild = undefined;
-
-        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
-
-            var child = app.project.rootItem.children[i];
-            if (child.name === "MARKER") {
-                markerChild = child;
-                break;
-            }
-
-        }
+        var markerChild = helper.getProjectItemInRoot("MARKER");
 
         if (markerChild === undefined) {
             alert("No settings layer called 'MARKER' found!");
@@ -213,6 +203,44 @@ var host = {
         fileNew.open("w");
         fileNew.write(output);
         fileNew.close();
+    },
+    /**
+     * Inserts a name project item (from root folder) into an audio/video track, with an optional delta.
+     * @param trackNumber the zero-based track number
+     * @param itemName the name of the item, e.g. "my_first_video.mp4"
+     * @param deltaInTicks the delta in ticks to move from the playhead position. Default: 0
+     * @param isVideoTrack true, if the clip should be inserted in a video track, false if audio track
+     */
+    insertNamedRootItemIntoTrack: function (trackNumber, itemName, deltaInTicks, isVideoTrack) {
+
+        var activeSequence = app.project.activeSequence;
+
+        // Get player position and add delta
+        var currentPlayheadPosition = activeSequence.getPlayerPosition();
+        currentPlayheadPosition.ticks = (parseInt(currentPlayheadPosition.ticks) + parseInt(deltaInTicks)).toString();
+
+        var targetTrack;
+        if (isVideoTrack === "true") {
+            if (parseInt(trackNumber) < activeSequence.videoTracks.numTracks) {
+                targetTrack = activeSequence.videoTracks[parseInt(trackNumber)];
+            } else {
+                alert("Bad video track number.");
+            }
+        } else {
+            if (parseInt(trackNumber) < activeSequence.audioTracks.numTracks) {
+                targetTrack = activeSequence.audioTracks[parseInt(trackNumber)];
+            } else {
+                alert("Bad audio track number.");
+            }
+        }
+
+        var projectItem = helper.getProjectItemInRoot(itemName);
+
+        if (projectItem === undefined) {
+            alert("Specified item with name '" + projectItem + "' not found in project root.");
+        } else {
+            targetTrack.overwriteClip(projectItem, currentPlayheadPosition);
+        }
     }
 };
 
@@ -258,6 +286,20 @@ var helper = {
         var s = num + "";
         while (s.length < size) s = "0" + s;
         return s;
+    },
+    getProjectItemInRoot: function (itemName) {
+        var projectItem = undefined;
+
+        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
+
+            var child = app.project.rootItem.children[i];
+            if (child.name === itemName) {
+                projectItem = child;
+                break;
+            }
+        }
+
+        return projectItem;
     }
 };
 
