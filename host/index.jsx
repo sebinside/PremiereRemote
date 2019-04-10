@@ -241,6 +241,73 @@ var host = {
         } else {
             targetTrack.overwriteClip(projectItem, currentPlayheadPosition);
         }
+    },
+
+    /**
+     * Loads serialized marker information from a CSV file, creates top layer markers for it.
+     * Note: To work properly, a marker-bin with 15 setting layers (all 15 colors) is required.
+     */
+    loadMarkersFromCSVFile: function () {
+        var csvFileDialog = File.openDialog("Target CSV File", "*.csv");
+        var csvFile = csvFileDialog.fsName;
+
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var currentPlayheadPosition = currentSequence.getPlayerPosition();
+
+        if (csvFile) {
+
+            var file = File(csvFile);
+            file.open("r");
+            var fullText = file.read();
+            file.close();
+
+            var lines = fullText.split("\n");
+
+            for (var i = 0; i < lines.length; i++) {
+                var entry = lines[i].split(",");
+
+                if (entry.length === 7) {
+                    // Parse csv
+                    var seconds = parseInt(entry[0]) * 3600 + parseInt(entry[1]) * 60 + parseInt(entry[2]) + (parseInt(entry[3]) / 1000);
+                    var mode = entry[4];
+                    var message = entry[5];
+                    var color = entry[6];
+
+                    // Insert clip
+                    var markerChild = helper.getMarkerItemInMarkerFolder(color);
+                    var targetInSeconds = currentPlayheadPosition.seconds + seconds;
+                    markerLayer.overwriteClip(markerChild, targetInSeconds);
+
+                    // Retrieve clip
+                    var clip = helper.getMarkerClip(targetInSeconds);
+
+                    // Set name
+                    clip.name = message;
+
+                    // Set length
+                    if (mode === "mode") {
+                        // If mode == mode, get next item with mode mode and calculate length
+                        var nextItemSeconds = -1;
+                        for (var j = i + 1; j < lines.length; j++) {
+                            var newEntry = lines[j].split(",");
+                            var nextSeconds = parseInt(newEntry[0]) * 3600 + parseInt(newEntry[1]) * 60 + parseInt(newEntry[2]) + (parseInt(newEntry[3]) / 1000);
+                            var nextMode = newEntry[4];
+
+                            if (nextMode === "mode") {
+                                nextItemSeconds = nextSeconds;
+                                break;
+                            }
+                        }
+                        if (nextItemSeconds > 0) {
+                            var endTime = new Time;
+                            endTime.seconds = nextItemSeconds + currentPlayheadPosition.seconds;
+                            clip.end = endTime;
+                        }
+                    }
+                }
+            }
+        }
     }
 };
 
@@ -300,6 +367,46 @@ var helper = {
         }
 
         return projectItem;
+    },
+    getMarkerItemInMarkerFolder: function (markerColor) {
+        var projectItem = undefined;
+
+        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
+
+            var child = app.project.rootItem.children[i];
+
+            if (child.name === "marker") {
+                for (var j = 0; j < child.children.numItems; j++) {
+
+                    var markerChild = child.children[j];
+
+                    if (markerChild.name === markerColor) {
+                        return markerChild;
+                    }
+                }
+            }
+        }
+        return undefined;
+    },
+    getMarkerClip: function (timestamp) {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+        var timestampInTicks = (timestamp + 1) * 254016000000;
+        // Hack to get rid of rounding problems, converted to ticks
+        // FIXME: More than one marker per second not supported
+
+        for (var i = 0; i < markerCount; i++) {
+            var clip = markerClips[i];
+            var startTicks = clip.start.ticks;
+            var endTicks = clip.end.ticks;
+
+            if (parseInt(startTicks) <= parseInt(timestampInTicks)
+                && parseInt(timestampInTicks) < parseInt(endTicks)) {
+                return clip;
+            }
+        }
     }
 };
 
