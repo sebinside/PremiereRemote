@@ -280,7 +280,7 @@ var host = {
                     markerLayer.overwriteClip(markerChild, targetInSeconds);
 
                     // Retrieve clip
-                    var clip = helper.getMarkerClip(targetInSeconds);
+                    var clip = getLastUnnamedMarkerClip();
 
                     // Set name
                     clip.name = message;
@@ -407,6 +407,27 @@ var helper = {
                 return clip;
             }
         }
+    },
+    getLastUnnamedMarkerClip: function() {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+    
+        var lastMarker = markerClips[markerCount - 1];
+        debugger;
+    
+        // Dirty coded dirty hack, premiere is... not exact with its ticks?!
+        // If last marker has no name = This is my new marker. If it has a name -> streatched mode marker
+        if (lastMarker.name === "0" || lastMarker.name === "1" || lastMarker.name === "2" ||
+            lastMarker.name === "3" || lastMarker.name === "4" || lastMarker.name === "5" ||
+            lastMarker.name === "6" || lastMarker.name === "7" || lastMarker.name === "8" ||
+            lastMarker.name === "9" || lastMarker.name === "10" || lastMarker.name === "11" ||
+            lastMarker.name === "12" || lastMarker.name === "13" || lastMarker.name === "14" ||
+            lastMarker.name === "15") {
+            return lastMarker;
+        }
+        return markerClips[markerCount - 2];
     }
 };
 
