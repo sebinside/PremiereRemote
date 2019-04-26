@@ -24,6 +24,8 @@ This short guide will show how to install and use the AHK2PremiereCEP-Framework.
 
 1. Start by cloning or downloading this repository. There is a [ready-to-use-version](https://github.com/sebinside/AHK2PremiereCEP/releases) available.
 
+	Please note: This project uses npm to manage dependencies like the `express` web server. Don't forget to run `npm install` on the console inside the `client` folder. For more information, head over to https://nodejs.org/
+
 2. Follow [this documentation](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_8.x/Documentation/CEP%208.0%20HTML%20Extension%20Cookbook.md) to install the extension. Basicaly, you have to:
 
      1. Use `regedit` to allow the execution of unsigned Adobe Premiere extensions.
