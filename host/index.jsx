@@ -121,10 +121,25 @@ var host = {
      * Short explanation: I use the topmost video track with setting layer as markers due to the better support in premiere.
      */
     selectCurrentMarker: function () {
+        this.deselectAllMarkers();
         var clip = helper.getCurrentMarkerClip();
 
         if (clip !== undefined) {
             clip.setSelected(true);
+        }
+    },
+    /**
+     * Deselects all markers in the marker layer.
+     */
+    deselectAllMarkers: function() {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+
+        for (var i = 0; i < markerCount; i++) {
+            var clip = markerClips[i];
+            clip.setSelected(false);
         }
     },
     /**
@@ -141,15 +156,18 @@ var host = {
     /**
      * Adds a new marker (NO normal marker, a settings layer, see above) to the current playhead position.
      */
-    addCustomMarker: function () {
+    addCustomMarker: function (color) {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        
+        helper.fixPlayHeadPosition(helper.projectFrameRate);
         var currentPlayheadPosition = currentSequence.getPlayerPosition();
+        
 
-        var markerChild = helper.getProjectItemInRoot("MARKER");
+        var markerChild = helper.getMarkerItemInMarkerFolder(color);
 
         if (markerChild === undefined) {
-            alert("No settings layer called 'MARKER' found!");
+            alert("No 'marker' folder found. Please use a viable preset.");
         } else {
             markerLayer.overwriteClip(markerChild, currentPlayheadPosition);
         }
@@ -280,7 +298,7 @@ var host = {
                     markerLayer.overwriteClip(markerChild, targetInSeconds);
 
                     // Retrieve clip
-                    var clip = getLastUnnamedMarkerClip();
+                    var clip = helper.getLastUnnamedMarkerClip();
 
                     // Set name
                     clip.name = message;
@@ -315,6 +333,7 @@ var host = {
  * Define your helping functions here, these are NOT published on localhost.
  */
 var helper = {
+    projectFrameRate: 24,
     /**
      * Returns the specified track using the QE DOM.
      * @param isVideoTrack true, if the specified track is video
@@ -331,11 +350,22 @@ var helper = {
         }
         return track;
     },
+    fixPlayHeadPosition: function(frameRate) {
+        var currentSequence = app.project.activeSequence;
+        var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
+        var ticksPerSecond = 254016000000;
+        var ticksPerFrame = ticksPerSecond / parseInt(frameRate);
+        var newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
+
+        currentSequence.setPlayerPosition(newPos * ticksPerFrame);
+    },
     getCurrentMarkerClip: function () {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var markerClips = markerLayer.clips;
         var markerCount = markerClips.numItems;
+
+        helper.fixPlayHeadPosition(helper.projectFrameRate);
         var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
 
         for (var i = 0; i < markerCount; i++) {
