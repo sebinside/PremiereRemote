@@ -3,13 +3,25 @@
  */
 var host = {
     /**
-     * This method is only there for debugging purposes.
+     * @swagger
+     *
+     * /kill:
+     *      get:
+     *          description: This method is only there for debugging purposes.
      */
     kill: function () {
     },
     /**
-     * Mutes an audio track of the active sequence.
-     * @param trackNumber the 0 based audio track number
+     * @swagger
+     *
+     * /muteAudioTrack?trackNumber={trackNumber}:
+     *      get:
+     *          description: Mutes an audio track of the active sequence.
+     *          parameters:
+     *              - name: trackNumber
+     *                description: the 0 based audio track number
+     *                in: path
+     *                type: number
      */
     muteAudioTrack: function (trackNumber) { // 0 based
         trackNumber = parseInt(trackNumber);
