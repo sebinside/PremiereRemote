@@ -2,15 +2,18 @@
  * ALL functions defined here are visible via the localhost REST-like service.
  */
 var host = {
+
     /**
      * @swagger
      *
      * /kill:
      *      get:
      *          description: This method is only there for debugging purposes.
+     *                       For more information, please have a look at the index.js file.
      */
     kill: function () {
     },
+
     /**
      * @swagger
      *
@@ -32,9 +35,18 @@ var host = {
             sequence.audioTracks[trackNumber].setMute();
         }
     },
+
     /**
-     * Selects the proper named video clip of all currently selected clips.
-     * @param name the name of the layer, e.g REC_2153.mp4
+     * @swagger
+     * 
+     * /selectSelectedNamedVideoLayer?name={name}:
+     *      get:
+     *          description: Selects the proper named video clip of all currently selected clips.
+     *          parameters:
+     *              - name: name
+     *                description: the name of the layer, e.g REC_2153.mp4
+     *                in: path
+     *                type: string
      */
     selectSelectedNamedVideoLayer: function (name) {
         var sequence = app.project.activeSequence;
@@ -56,6 +68,7 @@ var host = {
                 }
             }
         }
+
         // Deselect all audio layers
         for (var j = 0; j < sequence.audioTracks.numTracks; j++) {
             var allAudioClips = sequence.audioTracks[j].clips;
@@ -66,20 +79,45 @@ var host = {
             }
         }
     },
+
     /**
-     * Toggles the lock of a specified track of the current scene.
-     * @param isVideoTrack true, if the specified track is video
-     * @param trackNumber the 0 based track number
+     * @swagger
+     * /toggleTrackLock?isVideoTrack={isVideoTrack}&trackNumber={trackNumber}:
+     *      get:
+     *          description: Toggles the lock of a specified track of the current scene.
+     *          parameters:
+     *              - name: isVideoTrack
+     *                description: true, if the specified track is video
+     *                in: path
+     *                type: boolean
+     *              - name: trackNumber
+     *                description: the 0 based track number
+     *                in: path
+     *                type: number
      */
     toggleTrackLock: function (isVideoTrack, trackNumber) {
         var isLocked = this.isTrackLocked(isVideoTrack, trackNumber);
         this.setTrackLock(isVideoTrack, trackNumber, !isLocked);
     },
+
     /**
-     * Locks or unlocks a specified track of the current scene.
-     * @param isVideoTrack true, if the specified track is video
-     * @param trackNumber the 0 based track number
-     * @param setLocked true, if the track should be locked
+     * @swagger
+     * /setTrackLock?isVideoTrack={isVideoTrack}&trackNumber={trackNumber}&setLocked={setLocked}:
+     *      get:
+     *          description: Locks or unlocks a specified track of the current scene.
+     *          parameters:
+     *              - name: isVideoTrack
+     *                description: true, if the specified track is video
+     *                in: path
+     *                type: boolean
+     *              - name: trackNumber
+     *                description: the 0 based track number
+     *                in: path
+     *                type: number
+     *              - name: trackNumber
+     *                description: true, if the track should be locked
+     *                in: path
+     *                type: boolean
      */
     setTrackLock: function (isVideoTrack, trackNumber, setLocked) {
         if (typeof setLocked === "string") {
@@ -88,18 +126,36 @@ var host = {
 
         helper.getTrackQE(isVideoTrack, trackNumber).setLock(Boolean(setLocked));
     },
+
     /**
-     * Returns, if the specified track is currently locked.
-     * @param isVideoTrack true, if the specified track is video
-     * @param trackNumber the 0 based track number
-     * @returns true, if the track is locked
+     * @swagger
+     * /isTrackLocked?isVideoTrack={isVideoTrack}&trackNumber={trackNumber}:
+     *      get:
+     *          description: Returns, if the specified track is currently locked.
+     *          parameters:
+     *              - name: isVideoTrack
+     *                description: true, if the specified track is video
+     *                in: path
+     *                type: boolean
+     *              - name: trackNumber
+     *                description: the 0 based track number
+     *                in: path
+     *                type: number
      */
     isTrackLocked: function (isVideoTrack, trackNumber) {
         return helper.getTrackQE(isVideoTrack, trackNumber).isLocked();
     },
+
     /**
-     * Toggles the lock-state of multiple audio or video tracks.
-     * @param trackNumbers comma separated list of 0 based track descriptors, e.g. "a0,v0,v1"
+     * @swagger
+     * /toggleMultipleTrackLocks?trackNumbers={trackNumbers}:
+     *      get:
+     *          description: Toggles the lock-state of multiple audio or video tracks.
+     *          parameters:
+     *              - name: trackNumbers
+     *                description: comma separated list of 0 based track descriptors, e.g. "a0,v0,v1"
+     *                in: path
+     *                type: string
      */
     toggleMultipleTrackLocks: function (trackNumbers) {
         var descriptors = trackNumbers.split(",");
@@ -112,10 +168,21 @@ var host = {
             this.toggleTrackLock(isVideoTrack.toString(), trackNumber.toString());
         }
     },
+
     /**
-     * Sets the lock-state of multiple audio or video tracks.
-     * @param trackNumbers comma separated list of 0 based track descriptors, e.g. "a0,v0,v1"
-     * @param setLocked true, if the tracks should be locked
+     * @swagger
+     * /setMultipleTrackLocks?trackNumbers={trackNumbers}&setLocked={setLocked}:
+     *      get:
+     *          description: Sets the lock-state of multiple audio or video tracks.
+     *          parameters:
+     *              - name: trackNumbers
+     *                description: comma separated list of 0 based track descriptors, e.g. "a0,v0,v1"
+     *                in: path
+     *                type: string
+     *              - name: setLocked
+     *                description: true, if the tracks should be locked
+     *                in: path
+     *                type: boolean
      */
     setMultipleTrackLocks: function (trackNumbers, setLocked) {
         var descriptors = trackNumbers.split(",");
@@ -128,9 +195,13 @@ var host = {
             this.setTrackLock(isVideoTrack.toString(), trackNumber.toString(), setLocked);
         }
     },
+
     /**
-     * Selects the current marker at playhead position.
-     * Short explanation: I use the topmost video track with setting layer as markers due to the better support in premiere.
+     * @swagger
+     * /selectCurrentMarker:
+     *      get:
+     *          description: Selects the current marker at playhead position.
+     *                       Short explanation: I use the topmost video track with setting layer as markers due to the better support in premiere.
      */
     selectCurrentMarker: function () {
         this.deselectAllMarkers();
@@ -140,8 +211,12 @@ var host = {
             clip.setSelected(true);
         }
     },
+
     /**
-     * Deselects all markers in the marker layer.
+     * @swagger
+     * /deselectAllMarkers:
+     *      get:
+     *          description: Deselects all markers in the marker layer.
      */
     deselectAllMarkers: function() {
         var currentSequence = app.project.activeSequence;
@@ -154,9 +229,17 @@ var host = {
             clip.setSelected(false);
         }
     },
+
     /**
-     * Sets the name of the current marker. Not a real marker, rather a settings layer, see above.
-     * @param name The name lol
+     * @swagger
+     * /setCurrentMarkerName?name={name}:
+     *      get:
+     *          description: Sets the name of the current marker. Not a real marker, rather a settings layer, see above.
+     *          parameters:
+     *              - name: name
+     *                description: The name to be set for the current marker
+     *                in: path
+     *                type: string
      */
     setCurrentMarkerName: function (name) {
         var clip = helper.getCurrentMarkerClip();
@@ -165,8 +248,17 @@ var host = {
             clip.name = name;
         }
     },
+
     /**
-     * Adds a new marker (NO normal marker, a settings layer, see above) to the current playhead position.
+     * @swagger
+     * /addCustomMarker?color={color}:
+     *      get:
+     *          description: Adds a new marker (NO normal marker, a settings layer, see above) to the current playhead position.
+     *          parameters:
+     *              - name: color
+     *                description: the color of the custom marker, between 0 - 15 (see premiere color labels)
+     *                in: path
+     *                type: string
      */
     addCustomMarker: function (color) {
         var currentSequence = app.project.activeSequence;
@@ -184,16 +276,24 @@ var host = {
             markerLayer.overwriteClip(markerChild, currentPlayheadPosition);
         }
     },
+
     /**
-     * Toggles the lock of the "marker layer", the top most video track (See above).
+     * @swagger
+     * /toggleLockCustomMarkerTrack:
+     *      get:
+     *          description: Toggles the lock of the "marker layer", the top most video track.
      */
     toggleLockCustomMarkerTrack: function () {
         var currentSequence = app.project.activeSequence;
         var markerTrackNumber = currentSequence.videoTracks.numTracks - 1;
         this.toggleTrackLock("true", markerTrackNumber.toString());
     },
+
     /**
-     * Saves all custom markers (top track settings layers, see above) to a specified file.
+     * @swagger
+     * /saveCustomMarkers:
+     *      get:
+     *          description: Saves all custom markers (top track settings layers, see above) to a specified file (Open File Dialog).
      */
     saveCustomMarkers: function () {
         var currentSequence = app.project.activeSequence;
@@ -234,12 +334,29 @@ var host = {
         fileNew.write(output);
         fileNew.close();
     },
+
     /**
-     * Inserts a name project item (from root folder) into an audio/video track, with an optional delta.
-     * @param trackNumber the zero-based track number
-     * @param itemName the name of the item, e.g. "my_first_video.mp4"
-     * @param deltaInTicks the delta in ticks to move from the playhead position. Default: 0
-     * @param isVideoTrack true, if the clip should be inserted in a video track, false if audio track
+     * @swagger
+     * /insertNamedRootItemIntoTrack?trackNumber={trackNumber}&itemName={itemName}&deltaInTicks={deltaInTicks}&isVideoTrack={isVideoTrack}:
+     *      get:
+     *          description: Inserts a name project item (from root folder) into an audio/video track, with an optional delta.
+     *          parameters:
+     *              - name: trackNumber
+     *                description: the zero-based track number
+     *                in: path
+     *                type: number
+     *              - name: itemName
+     *                description: the name of the item, e.g. "my_first_video.mp4"
+     *                in: path
+     *                type: string
+     *              - name: deltaInTicks
+     *                description: the delta in ticks to move from the playhead position. Default: 0
+     *                in: path
+     *                type: number
+     *              - name: isVideoTrack
+     *                description: true, if the clip should be inserted in a video track, false if audio track
+     *                in: path
+     *                type: boolean
      */
     insertNamedRootItemIntoTrack: function (trackNumber, itemName, deltaInTicks, isVideoTrack) {
 
@@ -274,8 +391,11 @@ var host = {
     },
 
     /**
-     * Loads serialized marker information from a CSV file, creates top layer markers for it.
-     * Note: To work properly, a marker-bin with 15 setting layers (all 15 colors) is required.
+     * @swagger
+     * /loadMarkersFromCSVFile:
+     *      get:
+     *          description: Loads serialized marker information from a CSV file, creates top layer markers for it.
+     *                       Note: To work properly, a marker-bin with 15 setting layers (all 15 colors) is required.
      */
     loadMarkersFromCSVFile: function () {
         var csvFileDialog = File.openDialog("Target CSV File", "*.csv");
@@ -342,6 +462,7 @@ var host = {
 };
 
 /**
+ * 
  * Define your helping functions here, these are NOT published on localhost.
  */
 var helper = {
