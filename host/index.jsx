@@ -219,10 +219,10 @@ var host = {
             var seconds = trueSeconds;
 
             if (hours > 0) {
-                output += pad(hours, 2) + ":";
+                output += helper.pad(hours, 2) + ":";
             }
-            output += pad(minutes, 2) + ":";
-            output += pad(seconds, 2) + " - ";
+            output += helper.pad(minutes, 2) + ":";
+            output += helper.pad(seconds, 2) + " - ";
 
             output += clip.name + "\n";
 
