@@ -3,16 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.jsx",
-  "dependencies": {},
-  "devDependencies": {
-    "ts-loader": "^6.1.0",
-    "types-for-adobe": "^1.5.0",
-    "typescript": "^3.6.3",
-    "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.9"
+  "dependencies": {
+    "types-for-adobe": "^1.5.0"
   },
+  "devDependencies": {},
   "scripts": {
-    "run": "webpack"
+    "run": "tsc index.tsx --outfile index.jsx"
   },
   "keywords": [],
   "author": "",
