@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "module": "none",
-    "noLib": true
+    "target": "es5",
+    "module": "amd",
+    "noLib": true,
+    "outFile": "index.jsx"
   }
 }
