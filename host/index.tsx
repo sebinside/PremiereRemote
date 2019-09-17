@@ -120,7 +120,7 @@ var host = {
      *                description: the 0 based track number
      *                in: path
      *                type: number
-     *              - name: trackNumber
+     *              - name: setLocked
      *                description: true, if the track should be locked
      *                in: path
      *                type: boolean
@@ -279,6 +279,7 @@ var host = {
         if (markerChild === undefined) {
             alert("No 'marker' folder found. Please use a viable preset.");
         } else {
+            // @ts-ignore
             markerLayer.overwriteClip(markerChild, currentPlayheadPosition);
         }
     },

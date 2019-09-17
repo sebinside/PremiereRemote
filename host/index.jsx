@@ -1,8 +1,8 @@
+/// <reference types="types-for-adobe/Premiere/2018"/>
 /**
  * ALL functions defined here are visible via the localhost REST-like service.
  */
 var host = {
-
     /**
      * @swagger
      *
@@ -13,7 +13,6 @@ var host = {
      */
     kill: function () {
     },
-
     /**
      * @swagger
      *
@@ -26,19 +25,16 @@ var host = {
      *                in: path
      *                type: number
      */
-    muteAudioTrack: function (trackNumber) { // 0 based
+    muteAudioTrack: function (trackNumber) {
         trackNumber = parseInt(trackNumber);
-
         var sequence = app.project.activeSequence;
-
         if (trackNumber < sequence.audioTracks.numTracks) {
             sequence.audioTracks[trackNumber].setMute();
         }
     },
-
     /**
      * @swagger
-     * 
+     *
      * /selectSelectedNamedVideoLayer?name={name}:
      *      get:
      *          description: Selects the proper named video clip of all currently selected clips.
@@ -50,36 +46,31 @@ var host = {
      */
     selectSelectedNamedVideoLayer: function (name) {
         var sequence = app.project.activeSequence;
-
         // Search all selected video layers
         for (var i = 0; i < sequence.videoTracks.numTracks; i++) {
             var allVideoClips = sequence.videoTracks[i].clips;
             for (var n = 0; n < allVideoClips.numItems; n++) {
-
                 var videoClip = allVideoClips[n];
                 if (videoClip.isSelected()) {
-
                     // Maybe, this is the correctly named layer
                     if (videoClip.name === name) {
-                        videoClip.setSelected(true, true);
-                    } else {
-                        videoClip.setSelected(false, true);
+                        videoClip.setSelected(1, 1);
+                    }
+                    else {
+                        videoClip.setSelected(0, 1);
                     }
                 }
             }
         }
-
         // Deselect all audio layers
         for (var j = 0; j < sequence.audioTracks.numTracks; j++) {
             var allAudioClips = sequence.audioTracks[j].clips;
             for (var k = 0; k < allAudioClips.numItems; k++) {
-
                 var audioClip = allAudioClips[k];
-                audioClip.setSelected(false, true);
+                audioClip.setSelected(0, 1);
             }
         }
     },
-
     /**
      * @swagger
      * /toggleTrackLock?isVideoTrack={isVideoTrack}&trackNumber={trackNumber}:
@@ -99,7 +90,6 @@ var host = {
         var isLocked = this.isTrackLocked(isVideoTrack, trackNumber);
         this.setTrackLock(isVideoTrack, trackNumber, !isLocked);
     },
-
     /**
      * @swagger
      * /setTrackLock?isVideoTrack={isVideoTrack}&trackNumber={trackNumber}&setLocked={setLocked}:
@@ -114,7 +104,7 @@ var host = {
      *                description: the 0 based track number
      *                in: path
      *                type: number
-     *              - name: trackNumber
+     *              - name: setLocked
      *                description: true, if the track should be locked
      *                in: path
      *                type: boolean
@@ -123,10 +113,8 @@ var host = {
         if (typeof setLocked === "string") {
             setLocked = (setLocked === "true");
         }
-
         helper.getTrackQE(isVideoTrack, trackNumber).setLock(Boolean(setLocked));
     },
-
     /**
      * @swagger
      * /isTrackLocked?isVideoTrack={isVideoTrack}&trackNumber={trackNumber}:
@@ -145,7 +133,6 @@ var host = {
     isTrackLocked: function (isVideoTrack, trackNumber) {
         return helper.getTrackQE(isVideoTrack, trackNumber).isLocked();
     },
-
     /**
      * @swagger
      * /toggleMultipleTrackLocks?trackNumbers={trackNumbers}:
@@ -159,16 +146,13 @@ var host = {
      */
     toggleMultipleTrackLocks: function (trackNumbers) {
         var descriptors = trackNumbers.split(",");
-
         for (var i = 0; i < descriptors.length; i++) {
             var descriptor = descriptors[i];
             var isVideoTrack = descriptor.charAt(0) === "v";
             var trackNumber = parseInt(descriptor.charAt(1));
-
             this.toggleTrackLock(isVideoTrack.toString(), trackNumber.toString());
         }
     },
-
     /**
      * @swagger
      * /setMultipleTrackLocks?trackNumbers={trackNumbers}&setLocked={setLocked}:
@@ -186,16 +170,13 @@ var host = {
      */
     setMultipleTrackLocks: function (trackNumbers, setLocked) {
         var descriptors = trackNumbers.split(",");
-
         for (var i = 0; i < descriptors.length; i++) {
             var descriptor = descriptors[i];
             var isVideoTrack = descriptor.charAt(0) === "v";
             var trackNumber = parseInt(descriptor.charAt(1));
-
             this.setTrackLock(isVideoTrack.toString(), trackNumber.toString(), setLocked);
         }
     },
-
     /**
      * @swagger
      * /selectCurrentMarker:
@@ -206,30 +187,26 @@ var host = {
     selectCurrentMarker: function () {
         this.deselectAllMarkers();
         var clip = helper.getCurrentMarkerClip();
-
         if (clip !== undefined) {
-            clip.setSelected(true);
+            clip.setSelected(1);
         }
     },
-
     /**
      * @swagger
      * /deselectAllMarkers:
      *      get:
      *          description: Deselects all markers in the marker layer.
      */
-    deselectAllMarkers: function() {
+    deselectAllMarkers: function () {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var markerClips = markerLayer.clips;
         var markerCount = markerClips.numItems;
-
         for (var i = 0; i < markerCount; i++) {
             var clip = markerClips[i];
-            clip.setSelected(false);
+            clip.setSelected(0);
         }
     },
-
     /**
      * @swagger
      * /setCurrentMarkerName?name={name}:
@@ -243,12 +220,10 @@ var host = {
      */
     setCurrentMarkerName: function (name) {
         var clip = helper.getCurrentMarkerClip();
-
         if (clip !== undefined) {
             clip.name = name;
         }
     },
-
     /**
      * @swagger
      * /addCustomMarker?color={color}:
@@ -263,20 +238,17 @@ var host = {
     addCustomMarker: function (color) {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
-        
         helper.fixPlayHeadPosition(helper.projectFrameRate);
         var currentPlayheadPosition = currentSequence.getPlayerPosition();
-        
-
         var markerChild = helper.getMarkerItemInMarkerFolder(color);
-
         if (markerChild === undefined) {
             alert("No 'marker' folder found. Please use a viable preset.");
-        } else {
+        }
+        else {
+            // @ts-ignore
             markerLayer.overwriteClip(markerChild, currentPlayheadPosition);
         }
     },
-
     /**
      * @swagger
      * /toggleLockCustomMarkerTrack:
@@ -288,7 +260,6 @@ var host = {
         var markerTrackNumber = currentSequence.videoTracks.numTracks - 1;
         this.toggleTrackLock("true", markerTrackNumber.toString());
     },
-
     /**
      * @swagger
      * /saveCustomMarkers:
@@ -301,40 +272,30 @@ var host = {
         var markerClips = markerLayer.clips;
         var markerCount = markerClips.numItems;
         var projectName = app.project.name;
-
         var output = "Project: " + projectName + "\n";
         output += "Sequence: " + currentSequence.name + "\n";
         output += "Marker count: " + markerCount + "\n\n";
-
         for (var i = 0; i < markerCount; i++) {
             var clip = markerClips[i];
-            var trueSeconds = parseInt(clip.start.seconds);
-
-            var hours = parseInt(trueSeconds / 3600);
+            var trueSeconds = clip.start.seconds;
+            var hours = trueSeconds / 3600;
             trueSeconds -= hours * 3600;
-
-            var minutes = parseInt(trueSeconds / 60);
+            var minutes = trueSeconds / 60;
             trueSeconds -= minutes * 60;
-
             var seconds = trueSeconds;
-
             if (hours > 0) {
                 output += helper.pad(hours, 2) + ":";
             }
             output += helper.pad(minutes, 2) + ":";
             output += helper.pad(seconds, 2) + " - ";
-
             output += clip.name + "\n";
-
         }
-
         var file = new File();
         var fileNew = file.saveDlg("Save new file", "*.txt");
         fileNew.open("w");
         fileNew.write(output);
         fileNew.close();
     },
-
     /**
      * @swagger
      * /insertNamedRootItemIntoTrack?trackNumber={trackNumber}&itemName={itemName}&deltaInTicks={deltaInTicks}&isVideoTrack={isVideoTrack}:
@@ -359,37 +320,35 @@ var host = {
      *                type: boolean
      */
     insertNamedRootItemIntoTrack: function (trackNumber, itemName, deltaInTicks, isVideoTrack) {
-
         var activeSequence = app.project.activeSequence;
-
         // Get player position and add delta
         var currentPlayheadPosition = activeSequence.getPlayerPosition();
         currentPlayheadPosition.ticks = (parseInt(currentPlayheadPosition.ticks) + parseInt(deltaInTicks)).toString();
-
         var targetTrack;
         if (isVideoTrack === "true") {
             if (parseInt(trackNumber) < activeSequence.videoTracks.numTracks) {
                 targetTrack = activeSequence.videoTracks[parseInt(trackNumber)];
-            } else {
+            }
+            else {
                 alert("Bad video track number.");
             }
-        } else {
+        }
+        else {
             if (parseInt(trackNumber) < activeSequence.audioTracks.numTracks) {
                 targetTrack = activeSequence.audioTracks[parseInt(trackNumber)];
-            } else {
+            }
+            else {
                 alert("Bad audio track number.");
             }
         }
-
         var projectItem = helper.getProjectItemInRoot(itemName);
-
         if (projectItem === undefined) {
             alert("Specified item with name '" + projectItem + "' not found in project root.");
-        } else {
+        }
+        else {
             targetTrack.overwriteClip(projectItem, currentPlayheadPosition);
         }
     },
-
     /**
      * @swagger
      * /loadMarkersFromCSVFile:
@@ -400,41 +359,31 @@ var host = {
     loadMarkersFromCSVFile: function () {
         var csvFileDialog = File.openDialog("Target CSV File", "*.csv");
         var csvFile = csvFileDialog.fsName;
-
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var currentPlayheadPosition = currentSequence.getPlayerPosition();
-
         if (csvFile) {
-
             var file = File(csvFile);
             file.open("r");
             var fullText = file.read();
             file.close();
-
             var lines = fullText.split("\n");
-
             for (var i = 0; i < lines.length; i++) {
                 var entry = lines[i].split(",");
-
                 if (entry.length === 7) {
                     // Parse csv
                     var seconds = parseInt(entry[0]) * 3600 + parseInt(entry[1]) * 60 + parseInt(entry[2]) + (parseInt(entry[3]) / 1000);
                     var mode = entry[4];
                     var message = entry[5];
                     var color = entry[6];
-
                     // Insert clip
                     var markerChild = helper.getMarkerItemInMarkerFolder(color);
                     var targetInSeconds = currentPlayheadPosition.seconds + seconds;
                     markerLayer.overwriteClip(markerChild, targetInSeconds);
-
                     // Retrieve clip
                     var clip = helper.getLastUnnamedMarkerClip();
-
                     // Set name
                     clip.name = message;
-
                     // Set length
                     if (mode === "mode") {
                         // If mode == mode, get next item with mode mode and calculate length
@@ -443,7 +392,6 @@ var host = {
                             var newEntry = lines[j].split(",");
                             var nextSeconds = parseInt(newEntry[0]) * 3600 + parseInt(newEntry[1]) * 60 + parseInt(newEntry[2]) + (parseInt(newEntry[3]) / 1000);
                             var nextMode = newEntry[4];
-
                             if (nextMode === "mode") {
                                 nextItemSeconds = nextSeconds;
                                 break;
@@ -452,6 +400,7 @@ var host = {
                         if (nextItemSeconds > 0) {
                             var endTime = new Time;
                             endTime.seconds = nextItemSeconds + currentPlayheadPosition.seconds;
+                            // @ts-ignore
                             clip.end = endTime;
                         }
                     }
@@ -460,9 +409,8 @@ var host = {
         }
     }
 };
-
 /**
- * 
+ *
  * Define your helping functions here, these are NOT published on localhost.
  */
 var helper = {
@@ -478,34 +426,31 @@ var helper = {
         var track;
         if (isVideoTrack === "true") {
             track = activeSequence.getVideoTrackAt(parseInt(trackNumber));
-        } else {
+        }
+        else {
             track = activeSequence.getAudioTrackAt(parseInt(trackNumber));
         }
         return track;
     },
-    fixPlayHeadPosition: function(frameRate) {
+    fixPlayHeadPosition: function (frameRate) {
         var currentSequence = app.project.activeSequence;
         var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
         var ticksPerSecond = 254016000000;
         var ticksPerFrame = ticksPerSecond / parseInt(frameRate);
         var newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
-
-        currentSequence.setPlayerPosition(newPos * ticksPerFrame);
+        currentSequence.setPlayerPosition(String(newPos * ticksPerFrame));
     },
     getCurrentMarkerClip: function () {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var markerClips = markerLayer.clips;
         var markerCount = markerClips.numItems;
-
         helper.fixPlayHeadPosition(helper.projectFrameRate);
         var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
-
         for (var i = 0; i < markerCount; i++) {
             var clip = markerClips[i];
             var startTicks = clip.start.ticks;
             var endTicks = clip.end.ticks;
-
             if (parseInt(startTicks) <= parseInt(currentPlayheadPosition)
                 && parseInt(currentPlayheadPosition) < parseInt(endTicks)) {
                 return clip;
@@ -514,35 +459,27 @@ var helper = {
     },
     pad: function (num, size) {
         var s = num + "";
-        while (s.length < size) s = "0" + s;
+        while (s.length < size)
+            s = "0" + s;
         return s;
     },
     getProjectItemInRoot: function (itemName) {
         var projectItem = undefined;
-
         for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
-
             var child = app.project.rootItem.children[i];
             if (child.name === itemName) {
                 projectItem = child;
                 break;
             }
         }
-
         return projectItem;
     },
     getMarkerItemInMarkerFolder: function (markerColor) {
-        var projectItem = undefined;
-
         for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
-
             var child = app.project.rootItem.children[i];
-
             if (child.name === "marker") {
                 for (var j = 0; j < child.children.numItems; j++) {
-
                     var markerChild = child.children[j];
-
                     if (markerChild.name === markerColor) {
                         return markerChild;
                     }
@@ -559,27 +496,23 @@ var helper = {
         var timestampInTicks = (timestamp + 1) * 254016000000;
         // Hack to get rid of rounding problems, converted to ticks
         // FIXME: More than one marker per second not supported
-
         for (var i = 0; i < markerCount; i++) {
             var clip = markerClips[i];
             var startTicks = clip.start.ticks;
             var endTicks = clip.end.ticks;
-
-            if (parseInt(startTicks) <= parseInt(timestampInTicks)
-                && parseInt(timestampInTicks) < parseInt(endTicks)) {
+            if (parseInt(startTicks) <= timestampInTicks
+                && timestampInTicks < parseInt(endTicks)) {
                 return clip;
             }
         }
     },
-    getLastUnnamedMarkerClip: function() {
+    getLastUnnamedMarkerClip: function () {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var markerClips = markerLayer.clips;
         var markerCount = markerClips.numItems;
-    
         var lastMarker = markerClips[markerCount - 1];
         debugger;
-    
         // Dirty coded dirty hack, premiere is... not exact with its ticks?!
         // If last marker has no name = This is my new marker. If it has a name -> streatched mode marker
         if (lastMarker.name === "0" || lastMarker.name === "1" || lastMarker.name === "2" ||
@@ -593,7 +526,6 @@ var helper = {
         return markerClips[markerCount - 2];
     }
 };
-
 /**
  * These functions are only used internally.
  */
