@@ -201,7 +201,7 @@ var host = {
      * /selectCurrentMarker:
      *      get:
      *          description: Selects the current marker at playhead position.
-     *                       Short explanation: I use the topmost video track with setting layer as markers due to the better support in premiere.
+     *                       Short explanation I use the topmost video track with setting layer as markers due to the better support in premiere.
      */
     selectCurrentMarker: function () {
         this.deselectAllMarkers();
@@ -350,7 +350,7 @@ var host = {
      *                in: path
      *                type: string
      *              - name: deltaInTicks
-     *                description: the delta in ticks to move from the playhead position. Default: 0
+     *                description: the delta in ticks to move from the playhead position. Default 0
      *                in: path
      *                type: number
      *              - name: isVideoTrack
@@ -395,7 +395,7 @@ var host = {
      * /loadMarkersFromCSVFile:
      *      get:
      *          description: Loads serialized marker information from a CSV file, creates top layer markers for it.
-     *                       Note: To work properly, a marker-bin with 15 setting layers (all 15 colors) is required.
+     *                       Note_ To work properly, a marker-bin with 15 setting layers (all 15 colors) is required.
      */
     loadMarkersFromCSVFile: function () {
         var csvFileDialog = File.openDialog("Target CSV File", "*.csv");
