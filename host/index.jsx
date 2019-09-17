@@ -1,17 +1,11 @@
-define("test", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.test = "ABC";
-});
 /// <reference types="types-for-adobe/Premiere/2018"/>
-define("index", ["require", "exports", "test"], function (require, exports, test_1) {
+define("index", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     /**
      * ALL functions defined here are visible via the localhost REST-like service.
      */
     exports.host = {
-        test: test_1.test,
         /**
          * @swagger
          *
