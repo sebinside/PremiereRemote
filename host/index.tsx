@@ -1,13 +1,15 @@
 /// <reference types="types-for-adobe/Premiere/2018"/>
 
-declare interface Track {
-    overwriteClip(clipProjectItem: ProjectItem, time: Time): void
+declare global {
+    interface Track {
+        overwriteClip(clipProjectItem: ProjectItem, time: Time): void
+    }
 }
 
 /**
  * ALL functions defined here are visible via the localhost REST-like service.
  */
-var host = {
+export const host = {
 
     /**
      * @swagger
