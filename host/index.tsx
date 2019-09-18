@@ -4,16 +4,15 @@ declare interface Track {
     overwriteClip(clipProjectItem: ProjectItem, time: Time): void
 }
 
-
-class Host {
+class MarkerUtils {
     static addCustomMarker(color: string) {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
 
-        helper.fixPlayHeadPosition(helper.projectFrameRate);
+        Utils.fixPlayHeadPosition(Utils.projectFrameRate);
         var currentPlayheadPosition = currentSequence.getPlayerPosition();
 
-        var markerChild = helper.getMarkerItemInMarkerFolder(color);
+        var markerChild = Utils.getMarkerItemInMarkerFolder(color);
 
         if (markerChild === undefined) {
             alert("No 'marker' folder found. Please use a viable preset.");
@@ -50,12 +49,12 @@ class Host {
                     var color = entry[6];
 
                     // Insert clip
-                    var markerChild = helper.getMarkerItemInMarkerFolder(color);
+                    var markerChild = Utils.getMarkerItemInMarkerFolder(color);
                     var targetInSeconds = currentPlayheadPosition.seconds + seconds;
                     markerLayer.overwriteClip(markerChild, targetInSeconds);
 
                     // Retrieve clip
-                    var clip = helper.getLastUnnamedMarkerClip();
+                    var clip = Utils.getLastUnnamedMarkerClip();
 
                     // Set name
                     clip.name = message;
@@ -86,6 +85,84 @@ class Host {
     }
 }
 
+class Utils {
+    static projectFrameRate = 24;
+
+    static fixPlayHeadPosition(frameRate) {
+        var currentSequence = app.project.activeSequence;
+        var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
+        var ticksPerSecond = 254016000000;
+        var ticksPerFrame = ticksPerSecond / parseInt(frameRate);
+        var newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
+
+        currentSequence.setPlayerPosition(String(newPos * ticksPerFrame));
+    }
+
+    static pad(num, size) {
+        var s = num + "";
+        while (s.length < size) s = "0" + s;
+        return s;
+    }
+
+    static getProjectItemInRoot(itemName) {
+        var projectItem = undefined;
+
+        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
+
+            var child = app.project.rootItem.children[i];
+            if (child.name === itemName) {
+                projectItem = child;
+                break;
+            }
+        }
+
+        return projectItem;
+    }
+
+    static getMarkerItemInMarkerFolder (markerColor) {
+
+        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
+
+            var child = app.project.rootItem.children[i];
+
+            if (child.name === "marker") {
+                for (var j = 0; j < child.children.numItems; j++) {
+
+                    var markerChild = child.children[j];
+
+                    if (markerChild.name === markerColor) {
+                        return markerChild;
+                    }
+                }
+            }
+        }
+        return undefined;
+    }
+
+    static getLastUnnamedMarkerClip() {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+
+        var lastMarker = markerClips[markerCount - 1];
+        debugger;
+
+        // Dirty coded dirty hack, premiere is... not exact with its ticks?!
+        // If last marker has no name = This is my new marker. If it has a name -> streatched mode marker
+        if (lastMarker.name === "0" || lastMarker.name === "1" || lastMarker.name === "2" ||
+            lastMarker.name === "3" || lastMarker.name === "4" || lastMarker.name === "5" ||
+            lastMarker.name === "6" || lastMarker.name === "7" || lastMarker.name === "8" ||
+            lastMarker.name === "9" || lastMarker.name === "10" || lastMarker.name === "11" ||
+            lastMarker.name === "12" || lastMarker.name === "13" || lastMarker.name === "14" ||
+            lastMarker.name === "15") {
+            return lastMarker;
+        }
+        return markerClips[markerCount - 2];
+    }
+}
+
+
 /**
  * ALL functions defined here are visible via the localhost REST-like service.
  */
@@ -113,8 +190,8 @@ var host = {
      *                in: path
      *                type: string
      */
-    addCustomMarker: function (color) {
-        Host.addCustomMarker(color);
+    addCustomMarker: function (color: string) {
+        MarkerUtils.addCustomMarker(color);
     },
 
     /**
@@ -125,84 +202,7 @@ var host = {
      *                       Note_ To work properly, a marker-bin with 15 setting layers (all 15 colors) is required.
      */
     loadMarkersFromCSVFile: function () {
-        Host.loadMarkersFromCSVFile();
-    }
-};
-
-/**
- *
- * Define your helping functions here, these are NOT published on localhost.
- */
-var helper = {
-    projectFrameRate: 24,
-
-    fixPlayHeadPosition: function (frameRate) {
-        var currentSequence = app.project.activeSequence;
-        var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
-        var ticksPerSecond = 254016000000;
-        var ticksPerFrame = ticksPerSecond / parseInt(frameRate);
-        var newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
-
-        currentSequence.setPlayerPosition(String(newPos * ticksPerFrame));
-    },
-    pad: function (num, size) {
-        var s = num + "";
-        while (s.length < size) s = "0" + s;
-        return s;
-    },
-    getProjectItemInRoot: function (itemName) {
-        var projectItem = undefined;
-
-        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
-
-            var child = app.project.rootItem.children[i];
-            if (child.name === itemName) {
-                projectItem = child;
-                break;
-            }
-        }
-
-        return projectItem;
-    },
-    getMarkerItemInMarkerFolder: function (markerColor) {
-
-        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
-
-            var child = app.project.rootItem.children[i];
-
-            if (child.name === "marker") {
-                for (var j = 0; j < child.children.numItems; j++) {
-
-                    var markerChild = child.children[j];
-
-                    if (markerChild.name === markerColor) {
-                        return markerChild;
-                    }
-                }
-            }
-        }
-        return undefined;
-    },
-    getLastUnnamedMarkerClip: function () {
-        var currentSequence = app.project.activeSequence;
-        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
-        var markerClips = markerLayer.clips;
-        var markerCount = markerClips.numItems;
-
-        var lastMarker = markerClips[markerCount - 1];
-        debugger;
-
-        // Dirty coded dirty hack, premiere is... not exact with its ticks?!
-        // If last marker has no name = This is my new marker. If it has a name -> streatched mode marker
-        if (lastMarker.name === "0" || lastMarker.name === "1" || lastMarker.name === "2" ||
-            lastMarker.name === "3" || lastMarker.name === "4" || lastMarker.name === "5" ||
-            lastMarker.name === "6" || lastMarker.name === "7" || lastMarker.name === "8" ||
-            lastMarker.name === "9" || lastMarker.name === "10" || lastMarker.name === "11" ||
-            lastMarker.name === "12" || lastMarker.name === "13" || lastMarker.name === "14" ||
-            lastMarker.name === "15") {
-            return lastMarker;
-        }
-        return markerClips[markerCount - 2];
+        MarkerUtils.loadMarkersFromCSVFile();
     }
 };
 
