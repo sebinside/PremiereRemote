@@ -59,10 +59,64 @@ var MarkerUtils = /** @class */ (function () {
                         if (nextItemSeconds > 0) {
                             var endTime = new Time;
                             endTime.seconds = nextItemSeconds + currentPlayheadPosition.seconds;
-                            clip.end = endTime;
+                            clip.end = endTime; // not my fault, types problem
                         }
                     }
                 }
+            }
+        }
+    };
+    MarkerUtils.saveCustomMarkers = function () {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+        var projectName = app.project.name;
+        var output = "Project: " + projectName + "\n";
+        output += "Sequence: " + currentSequence.name + "\n";
+        output += "Marker count: " + markerCount + "\n\n";
+        for (var i = 0; i < markerCount; i++) {
+            var clip = markerClips[i];
+            var trueSeconds = parseInt("" + clip.start.seconds);
+            var hours = parseInt("" + trueSeconds / 3600);
+            trueSeconds -= hours * 3600;
+            var minutes = parseInt("" + trueSeconds / 60);
+            trueSeconds -= minutes * 60;
+            var seconds = trueSeconds;
+            if (hours > 0) {
+                output += Utils.pad(hours, 2) + ":";
+            }
+            output += Utils.pad(minutes, 2) + ":";
+            output += Utils.pad(seconds, 2) + " - ";
+            output += clip.name + "\n";
+        }
+        var file = new File();
+        var fileNew = file.saveDlg("Save new file", "*.txt");
+        fileNew.encoding = "UTF8";
+        fileNew.open("w");
+        fileNew.write(output);
+        fileNew.close();
+    };
+    MarkerUtils.selectCurrentMarker = function () {
+        var clip = MarkerUtils.getCurrentMarkerClip();
+        if (clip !== undefined) {
+            clip.setSelected(1);
+        }
+    };
+    MarkerUtils.getCurrentMarkerClip = function () {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+        Utils.fixPlayHeadPosition(Utils.projectFrameRate);
+        var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
+        for (var i = 0; i < markerCount; i++) {
+            var clip = markerClips[i];
+            var startTicks = clip.start.ticks;
+            var endTicks = clip.end.ticks;
+            if (parseInt(startTicks) <= parseInt(currentPlayheadPosition)
+                && parseInt(currentPlayheadPosition) < parseInt(endTicks)) {
+                return clip;
             }
         }
     };
@@ -169,6 +223,25 @@ var host = {
      */
     loadMarkersFromCSVFile: function () {
         MarkerUtils.loadMarkersFromCSVFile();
+    },
+    /**
+     * @swagger
+     * /saveCustomMarkers:
+     *      get:
+     *          description: Saves all custom markers (top track settings layers, see above) to a specified file (Open File Dialog).
+     */
+    saveCustomMarkerToTextFile: function () {
+        MarkerUtils.saveCustomMarkers();
+    },
+    /**
+     * @swagger
+     * /selectCurrentMarker:
+     *      get:
+     *          description: Selects the current marker at playhead position.
+     *                       Short explanation I use the topmost video track with setting layer as markers due to the better support in premiere.
+     */
+    selectCurrentMarker: function () {
+        MarkerUtils.selectCurrentMarker();
     }
 };
 /**
