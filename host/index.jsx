@@ -1,4 +1,4 @@
-/// <reference types="types-for-adobe/Premiere/2018"/>
+/// <reference path="node_modules/types-for-adobe/Premiere/2018/index.d.ts"/>
 var MarkerUtils = /** @class */ (function () {
     function MarkerUtils() {
     }
@@ -31,7 +31,10 @@ var MarkerUtils = /** @class */ (function () {
                 var entry = lines[i].split(",");
                 if (entry.length === 7) {
                     // Parse csv
-                    var seconds = parseInt(entry[0]) * 3600 + parseInt(entry[1]) * 60 + parseInt(entry[2]) + (parseInt(entry[3]) / 1000);
+                    var seconds = parseInt(entry[0]) * 3600 +
+                        parseInt(entry[1]) * 60 +
+                        parseInt(entry[2]) +
+                        parseInt(entry[3]) / 1000;
                     var mode = entry[4];
                     var message = entry[5];
                     var color = entry[6];
@@ -49,7 +52,10 @@ var MarkerUtils = /** @class */ (function () {
                         var nextItemSeconds = -1;
                         for (var j = i + 1; j < lines.length; j++) {
                             var newEntry = lines[j].split(",");
-                            var nextSeconds = parseInt(newEntry[0]) * 3600 + parseInt(newEntry[1]) * 60 + parseInt(newEntry[2]) + (parseInt(newEntry[3]) / 1000);
+                            var nextSeconds = parseInt(newEntry[0]) * 3600 +
+                                parseInt(newEntry[1]) * 60 +
+                                parseInt(newEntry[2]) +
+                                parseInt(newEntry[3]) / 1000;
                             var nextMode = newEntry[4];
                             if (nextMode === "mode") {
                                 nextItemSeconds = nextSeconds;
@@ -57,8 +63,10 @@ var MarkerUtils = /** @class */ (function () {
                             }
                         }
                         if (nextItemSeconds > 0) {
-                            var endTime = new Time;
-                            endTime.seconds = nextItemSeconds + currentPlayheadPosition.seconds;
+                            var endTime = new Time();
+                            endTime.seconds =
+                                nextItemSeconds + currentPlayheadPosition.seconds;
+                            // @ts-ignore
                             clip.end = endTime; // not my fault, types problem
                         }
                     }
@@ -66,7 +74,7 @@ var MarkerUtils = /** @class */ (function () {
             }
         }
     };
-    MarkerUtils.saveCustomMarkers = function () {
+    MarkerUtils.saveCustomMarkerToTextFile = function () {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var markerClips = markerLayer.clips;
@@ -90,12 +98,17 @@ var MarkerUtils = /** @class */ (function () {
             output += Utils.pad(seconds, 2) + " - ";
             output += clip.name + "\n";
         }
-        var file = new File();
-        var fileNew = file.saveDlg("Save new file", "*.txt");
-        fileNew.encoding = "UTF8";
-        fileNew.open("w");
-        fileNew.write(output);
-        fileNew.close();
+        try {
+            var file = new File();
+            var fileNew = file.saveDlg("Save new file", "*.txt");
+            fileNew.encoding = "UTF8";
+            fileNew.open("w");
+            fileNew.write(output);
+            fileNew.close();
+        }
+        catch (error) {
+            // User hit cancel
+        }
     };
     MarkerUtils.selectCurrentMarker = function () {
         var clip = MarkerUtils.getCurrentMarkerClip();
@@ -114,9 +127,26 @@ var MarkerUtils = /** @class */ (function () {
             var clip = markerClips[i];
             var startTicks = clip.start.ticks;
             var endTicks = clip.end.ticks;
-            if (parseInt(startTicks) <= parseInt(currentPlayheadPosition)
-                && parseInt(currentPlayheadPosition) < parseInt(endTicks)) {
+            if (parseInt(startTicks) <= parseInt(currentPlayheadPosition) &&
+                parseInt(currentPlayheadPosition) < parseInt(endTicks)) {
                 return clip;
+            }
+        }
+    };
+    MarkerUtils.deselectAll = function () {
+        var currentSequence = app.project.activeSequence;
+        for (var i = 0; i < currentSequence.videoTracks.numTracks; i++) {
+            var track = currentSequence.videoTracks[i];
+            for (var j = 0; j < track.clips.numItems; j++) {
+                var clip = track.clips[j];
+                clip.setSelected(0);
+            }
+        }
+        for (var i = 0; i < currentSequence.audioTracks.numTracks; i++) {
+            var track = currentSequence.videoTracks[i];
+            for (var j = 0; j < track.clips.numItems; j++) {
+                var clip = track.clips[j];
+                clip.setSelected(0);
             }
         }
     };
@@ -129,12 +159,12 @@ var Utils = /** @class */ (function () {
         var currentSequence = app.project.activeSequence;
         var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
         var ticksPerSecond = 254016000000;
-        var ticksPerFrame = ticksPerSecond / parseInt(frameRate);
+        var ticksPerFrame = ticksPerSecond / frameRate;
         var newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
         currentSequence.setPlayerPosition(String(newPos * ticksPerFrame));
     };
     Utils.pad = function (num, size) {
-        var s = num + "";
+        var s = num.toString();
         while (s.length < size)
             s = "0" + s;
         return s;
@@ -172,12 +202,22 @@ var Utils = /** @class */ (function () {
         var lastMarker = markerClips[markerCount - 1];
         debugger;
         // Dirty coded dirty hack, premiere is... not exact with its ticks?!
-        // If last marker has no name = This is my new marker. If it has a name -> streatched mode marker
-        if (lastMarker.name === "0" || lastMarker.name === "1" || lastMarker.name === "2" ||
-            lastMarker.name === "3" || lastMarker.name === "4" || lastMarker.name === "5" ||
-            lastMarker.name === "6" || lastMarker.name === "7" || lastMarker.name === "8" ||
-            lastMarker.name === "9" || lastMarker.name === "10" || lastMarker.name === "11" ||
-            lastMarker.name === "12" || lastMarker.name === "13" || lastMarker.name === "14" ||
+        // If last marker has no name = This is my new marker. If it has a name -> stretched mode marker
+        if (lastMarker.name === "0" ||
+            lastMarker.name === "1" ||
+            lastMarker.name === "2" ||
+            lastMarker.name === "3" ||
+            lastMarker.name === "4" ||
+            lastMarker.name === "5" ||
+            lastMarker.name === "6" ||
+            lastMarker.name === "7" ||
+            lastMarker.name === "8" ||
+            lastMarker.name === "9" ||
+            lastMarker.name === "10" ||
+            lastMarker.name === "11" ||
+            lastMarker.name === "12" ||
+            lastMarker.name === "13" ||
+            lastMarker.name === "14" ||
             lastMarker.name === "15") {
             return lastMarker;
         }
@@ -198,8 +238,7 @@ var host = {
      *          description: This method is only there for debugging purposes.
      *                       For more information, please have a look at the index.js file.
      */
-    kill: function () {
-    },
+    kill: function () { },
     /**
      * @swagger
      * /addCustomMarker?color={color}:
@@ -226,12 +265,12 @@ var host = {
     },
     /**
      * @swagger
-     * /saveCustomMarkers:
+     * /saveCustomMarkerToTextFile:
      *      get:
      *          description: Saves all custom markers (top track settings layers, see above) to a specified file (Open File Dialog).
      */
     saveCustomMarkerToTextFile: function () {
-        MarkerUtils.saveCustomMarkers();
+        MarkerUtils.saveCustomMarkerToTextFile();
     },
     /**
      * @swagger
@@ -242,6 +281,15 @@ var host = {
      */
     selectCurrentMarker: function () {
         MarkerUtils.selectCurrentMarker();
+    },
+    /**
+     * @swagger
+     * /deselectAll:
+     *      get:
+     *          description: Deselects all video and audio clips
+     */
+    deselectAll: function () {
+        MarkerUtils.deselectAll();
     }
 };
 /**
