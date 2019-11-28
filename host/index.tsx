@@ -280,7 +280,7 @@ class Utils {
 /**
  * ALL functions defined here are visible via the localhost REST-like service.
  */
-let host = {
+const host = {
   /**
    * @swagger
    *
@@ -352,7 +352,7 @@ let host = {
 /**
  * These functions are only used internally.
  */
-let framework = {
+const framework = {
   enableQualityEngineering: function() {
     app.enableQE();
   }
