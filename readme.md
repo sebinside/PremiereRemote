@@ -86,7 +86,7 @@ If you want learn more about using AutoHotkey and the Adobe CEP SDK, have a look
 
 * Adobe CEP Premiere Samples: https://github.com/Adobe-CEP/Samples/blob/master/PProPanel/jsx/PPRO/Premiere.jsx
 * Premiere On Script, a Premiere CEP youtube channel: https://www.youtube.com/channel/UCmq_t_-4GLFu_nYaEDDModw
-* Taran Van Hermet, a macro specialist: https://www.youtube.com/user/TaranVH
+* Taran Van Hemert, a macro specialist: https://www.youtube.com/user/TaranVH
 * And my own twitch channel, were I develop with these techniques, sometimes: https://www.twitch.tv/skate702
 
 If there are more questions, you can contact me on [Twitter](https://twitter.com/skate702) or via [mail](mailto:hi@sebinside.de).
