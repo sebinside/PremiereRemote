@@ -117,7 +117,7 @@ var MarkerUtils = /** @class */ (function () {
     MarkerUtils.selectCurrentMarker = function () {
         var clip = MarkerUtils.getCurrentMarkerClip();
         if (clip !== undefined) {
-            clip.setSelected(true);
+            clip.setSelected(true, true);
         }
     };
     MarkerUtils.getCurrentMarkerClip = function () {
@@ -143,14 +143,14 @@ var MarkerUtils = /** @class */ (function () {
             var track = currentSequence.videoTracks[i];
             for (var j = 0; j < track.clips.numItems; j++) {
                 var clip = track.clips[j];
-                clip.setSelected(false);
+                clip.setSelected(false, true);
             }
         }
         for (var i = 0; i < currentSequence.audioTracks.numTracks; i++) {
             var track = currentSequence.videoTracks[i];
             for (var j = 0; j < track.clips.numItems; j++) {
                 var clip = track.clips[j];
-                clip.setSelected(false);
+                clip.setSelected(false, true);
             }
         }
     };

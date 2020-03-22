@@ -147,7 +147,7 @@ class MarkerUtils {
     const clip = MarkerUtils.getCurrentMarkerClip();
 
     if (clip !== undefined) {
-      clip.setSelected(true);
+      clip.setSelected(true, true);
     }
   }
 
@@ -171,7 +171,7 @@ class MarkerUtils {
         parseInt(currentPlayheadPosition) < parseInt(endTicks)
       ) {
         return clip;
-      }
+      } 
     }
   }
   static deselectAll(): void {
@@ -180,14 +180,14 @@ class MarkerUtils {
       const track = currentSequence.videoTracks[i];
       for (let j = 0; j < track.clips.numItems; j++) {
         const clip = track.clips[j];
-        clip.setSelected(false);
+        clip.setSelected(false, true);
       }
     }
     for (let i = 0; i < currentSequence.audioTracks.numTracks; i++) {
       const track = currentSequence.videoTracks[i];
       for (let j = 0; j < track.clips.numItems; j++) {
         const clip = track.clips[j];
-        clip.setSelected(false);
+        clip.setSelected(false, true);
       }
     }
   }
