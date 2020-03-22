@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "module": "es5",
-    "noLib": true
+    "module": "none",
+    "noLib": true,
+    "outFile": "index.jsx"
   }
 }
