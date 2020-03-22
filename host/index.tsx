@@ -1,4 +1,9 @@
-/// <reference path="node_modules/types-for-adobe/Premiere/2018/index.d.ts"/>
+/// <reference path="../typings/JavaScript.d.ts"/>
+/// <reference path="../typings/PlugPlugExternalObject.d.ts"/>
+/// <reference path="../typings/PremierePro.14.0.d.ts"/>
+/// <reference path="../typings/XMPScript.d.ts"/>
+/// <reference path="../typings/extendscript.d.ts"/>
+/// <reference path="../typings/global.d.ts"/>
 
 declare interface Track {
   overwriteClip(clipProjectItem: ProjectItem, time: Time): void;
@@ -86,7 +91,6 @@ class MarkerUtils {
               const endTime = new Time();
               endTime.seconds =
                 nextItemSeconds + currentPlayheadPosition.seconds;
-              // @ts-ignore
               clip.end = endTime; // not my fault, types problem
             }
           }
@@ -143,7 +147,7 @@ class MarkerUtils {
     const clip = MarkerUtils.getCurrentMarkerClip();
 
     if (clip !== undefined) {
-      clip.setSelected(1);
+      clip.setSelected(true);
     }
   }
 
@@ -176,14 +180,14 @@ class MarkerUtils {
       const track = currentSequence.videoTracks[i];
       for (let j = 0; j < track.clips.numItems; j++) {
         const clip = track.clips[j];
-        clip.setSelected(0);
+        clip.setSelected(false);
       }
     }
     for (let i = 0; i < currentSequence.audioTracks.numTracks; i++) {
       const track = currentSequence.videoTracks[i];
       for (let j = 0; j < track.clips.numItems; j++) {
         const clip = track.clips[j];
-        clip.setSelected(0);
+        clip.setSelected(false);
       }
     }
   }

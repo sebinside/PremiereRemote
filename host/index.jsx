@@ -1,4 +1,9 @@
-/// <reference path="node_modules/types-for-adobe/Premiere/2018/index.d.ts"/>
+/// <reference path="../typings/JavaScript.d.ts"/>
+/// <reference path="../typings/PlugPlugExternalObject.d.ts"/>
+/// <reference path="../typings/PremierePro.14.0.d.ts"/>
+/// <reference path="../typings/XMPScript.d.ts"/>
+/// <reference path="../typings/extendscript.d.ts"/>
+/// <reference path="../typings/global.d.ts"/>
 var MarkerUtils = /** @class */ (function () {
     function MarkerUtils() {
     }
@@ -66,7 +71,6 @@ var MarkerUtils = /** @class */ (function () {
                             var endTime = new Time();
                             endTime.seconds =
                                 nextItemSeconds + currentPlayheadPosition.seconds;
-                            // @ts-ignore
                             clip.end = endTime; // not my fault, types problem
                         }
                     }
@@ -113,7 +117,7 @@ var MarkerUtils = /** @class */ (function () {
     MarkerUtils.selectCurrentMarker = function () {
         var clip = MarkerUtils.getCurrentMarkerClip();
         if (clip !== undefined) {
-            clip.setSelected(1);
+            clip.setSelected(true);
         }
     };
     MarkerUtils.getCurrentMarkerClip = function () {
@@ -139,14 +143,14 @@ var MarkerUtils = /** @class */ (function () {
             var track = currentSequence.videoTracks[i];
             for (var j = 0; j < track.clips.numItems; j++) {
                 var clip = track.clips[j];
-                clip.setSelected(0);
+                clip.setSelected(false);
             }
         }
         for (var i = 0; i < currentSequence.audioTracks.numTracks; i++) {
             var track = currentSequence.videoTracks[i];
             for (var j = 0; j < track.clips.numItems; j++) {
                 var clip = track.clips[j];
-                clip.setSelected(0);
+                clip.setSelected(false);
             }
         }
     };
