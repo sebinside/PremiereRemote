@@ -10,15 +10,51 @@ declare interface Track {
 }
 
 class MarkerUtils {
+
+  static getMarkerItemInMarkerFolder(
+    markerColor: string
+  ): undefined | ProjectItem {
+    for (let i = 0; i < app.project.rootItem.children.numItems; i++) {
+      const child = app.project.rootItem.children[i];
+
+      if (child.name === "marker") {
+        for (let j = 0; j < child.children.numItems; j++) {
+          const markerChild = child.children[j];
+
+          if (markerChild.name === markerColor) {
+            return markerChild;
+          }
+        }
+      }
+    }
+    return undefined;
+  }
+
+  static getLastUnnamedMarkerClip(): TrackItem {
+    const currentSequence = app.project.activeSequence;
+    const markerLayer =
+      currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+    const markerClips = markerLayer.clips;
+    const markerCount = markerClips.numItems;
+
+    const lastMarker = markerClips[markerCount - 1];
+    debugger;
+
+    if (/[0-9]+/.test(lastMarker.name)) {
+      return lastMarker;
+    }
+    return markerClips[markerCount - 2];
+  }
+
   static addCustomMarker(color: string): void {
     const currentSequence = app.project.activeSequence;
     const markerLayer =
       currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
 
-    Utils.fixPlayHeadPosition(Utils.projectFrameRate);
+    Utils.fixPlayHeadPosition();
     const currentPlayheadPosition = currentSequence.getPlayerPosition();
 
-    const markerChild = Utils.getMarkerItemInMarkerFolder(color);
+    const markerChild = MarkerUtils.getMarkerItemInMarkerFolder(color);
 
     if (markerChild === undefined) {
       alert("No 'marker' folder found. Please use a viable preset.");
@@ -59,12 +95,12 @@ class MarkerUtils {
           const color = entry[6];
 
           // Insert clip
-          const markerChild = Utils.getMarkerItemInMarkerFolder(color);
+          const markerChild = MarkerUtils.getMarkerItemInMarkerFolder(color);
           const targetInSeconds = currentPlayheadPosition.seconds + seconds;
           markerLayer.overwriteClip(markerChild, targetInSeconds);
 
           // Retrieve clip
-          const clip = Utils.getLastUnnamedMarkerClip();
+          const clip = MarkerUtils.getLastUnnamedMarkerClip();
 
           // Set name
           clip.name = message;
@@ -158,7 +194,7 @@ class MarkerUtils {
     const markerClips = markerLayer.clips;
     const markerCount = markerClips.numItems;
 
-    Utils.fixPlayHeadPosition(Utils.projectFrameRate);
+    Utils.fixPlayHeadPosition();
     const currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
 
     for (let i = 0; i < markerCount; i++) {
@@ -194,16 +230,36 @@ class MarkerUtils {
 }
 
 class Utils {
-  static projectFrameRate = 24;
+  static ticksPerSecond = 254016000000;
 
-  static fixPlayHeadPosition(frameRate: number): void {
+  static targetAllTracks(target: boolean) {
+    const currentSequence = app.project.activeSequence;
+    for(let i = 0; i < currentSequence.videoTracks.numTracks; i++) {
+      currentSequence.videoTracks[i].setTargeted(target, true)
+    }
+    for(let i = 0; i < currentSequence.audioTracks.numTracks; i++) {
+      currentSequence.audioTracks[i].setTargeted(target, true)
+    }
+  }
+
+  static targetDefaultTracks() {
+    const currentSequence = app.project.activeSequence;
+    this.targetAllTracks(false);
+    for (let i = 0; i < Math.min(3, currentSequence.videoTracks.numTracks); i++) {
+      currentSequence.videoTracks[i].setTargeted(true, true);
+    }
+    if(currentSequence.audioTracks.numTracks > 0) {
+      currentSequence.audioTracks[0].setTargeted(true, true);
+    }
+  }
+
+  static fixPlayHeadPosition(): void {
     const currentSequence = app.project.activeSequence;
     const currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
-    const ticksPerSecond = 254016000000;
-    const ticksPerFrame = ticksPerSecond / frameRate;
-    const newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
+    const ticksPerFrame = currentSequence.getSettings().videoFrameRate.ticks;
+    const newPos = Math.ceil(parseInt(currentPlayheadPosition) / parseInt(ticksPerFrame));
 
-    currentSequence.setPlayerPosition(String(newPos * ticksPerFrame));
+    currentSequence.setPlayerPosition(String(newPos * parseInt(ticksPerFrame)));
   }
 
   static pad(num: number, size: number): string {
@@ -224,60 +280,6 @@ class Utils {
     }
 
     return projectItem;
-  }
-
-  static getMarkerItemInMarkerFolder(
-    markerColor: string
-  ): undefined | ProjectItem {
-    for (let i = 0; i < app.project.rootItem.children.numItems; i++) {
-      const child = app.project.rootItem.children[i];
-
-      if (child.name === "marker") {
-        for (let j = 0; j < child.children.numItems; j++) {
-          const markerChild = child.children[j];
-
-          if (markerChild.name === markerColor) {
-            return markerChild;
-          }
-        }
-      }
-    }
-    return undefined;
-  }
-
-  static getLastUnnamedMarkerClip(): TrackItem {
-    const currentSequence = app.project.activeSequence;
-    const markerLayer =
-      currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
-    const markerClips = markerLayer.clips;
-    const markerCount = markerClips.numItems;
-
-    const lastMarker = markerClips[markerCount - 1];
-    debugger;
-
-    // Dirty coded dirty hack, premiere is... not exact with its ticks?!
-    // If last marker has no name = This is my new marker. If it has a name -> stretched mode marker
-    if (
-      lastMarker.name === "0" ||
-      lastMarker.name === "1" ||
-      lastMarker.name === "2" ||
-      lastMarker.name === "3" ||
-      lastMarker.name === "4" ||
-      lastMarker.name === "5" ||
-      lastMarker.name === "6" ||
-      lastMarker.name === "7" ||
-      lastMarker.name === "8" ||
-      lastMarker.name === "9" ||
-      lastMarker.name === "10" ||
-      lastMarker.name === "11" ||
-      lastMarker.name === "12" ||
-      lastMarker.name === "13" ||
-      lastMarker.name === "14" ||
-      lastMarker.name === "15"
-    ) {
-      return lastMarker;
-    }
-    return markerClips[markerCount - 2];
   }
 }
 
@@ -350,7 +352,38 @@ const host = {
    */
   deselectAll: function() {
     MarkerUtils.deselectAll();
+  },
+
+  /**
+   * @swagger
+   * /targetAllTracks:
+   *      get:
+   *          description: Sets the target of all tracks to activated.
+   */
+  targetAllTracks: function() {
+    Utils.targetAllTracks(true);
+  },
+
+  /**
+   * @swagger
+   * /untargetAllTracks:
+   *      get:
+   *          description: Sets the target of all tracks to deactivated.
+   */
+  untargetAllTracks: function() {
+    Utils.targetAllTracks(false);
+  },
+
+  /**
+   * @swagger
+   * /targetDefaultTracks:
+   *      get:
+   *          description: Targets the default tracks (video 1-3, audio 1).
+   */
+  targetDefaultTracks: function() {
+    Utils.targetDefaultTracks();
   }
+
 };
 
 /**

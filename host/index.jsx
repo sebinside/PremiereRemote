@@ -7,12 +7,38 @@
 var MarkerUtils = /** @class */ (function () {
     function MarkerUtils() {
     }
+    MarkerUtils.getMarkerItemInMarkerFolder = function (markerColor) {
+        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
+            var child = app.project.rootItem.children[i];
+            if (child.name === "marker") {
+                for (var j = 0; j < child.children.numItems; j++) {
+                    var markerChild = child.children[j];
+                    if (markerChild.name === markerColor) {
+                        return markerChild;
+                    }
+                }
+            }
+        }
+        return undefined;
+    };
+    MarkerUtils.getLastUnnamedMarkerClip = function () {
+        var currentSequence = app.project.activeSequence;
+        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
+        var markerClips = markerLayer.clips;
+        var markerCount = markerClips.numItems;
+        var lastMarker = markerClips[markerCount - 1];
+        debugger;
+        if (/[0-9]+/.test(lastMarker.name)) {
+            return lastMarker;
+        }
+        return markerClips[markerCount - 2];
+    };
     MarkerUtils.addCustomMarker = function (color) {
         var currentSequence = app.project.activeSequence;
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
-        Utils.fixPlayHeadPosition(Utils.projectFrameRate);
+        Utils.fixPlayHeadPosition();
         var currentPlayheadPosition = currentSequence.getPlayerPosition();
-        var markerChild = Utils.getMarkerItemInMarkerFolder(color);
+        var markerChild = MarkerUtils.getMarkerItemInMarkerFolder(color);
         if (markerChild === undefined) {
             alert("No 'marker' folder found. Please use a viable preset.");
         }
@@ -44,11 +70,11 @@ var MarkerUtils = /** @class */ (function () {
                     var message = entry[5];
                     var color = entry[6];
                     // Insert clip
-                    var markerChild = Utils.getMarkerItemInMarkerFolder(color);
+                    var markerChild = MarkerUtils.getMarkerItemInMarkerFolder(color);
                     var targetInSeconds = currentPlayheadPosition.seconds + seconds;
                     markerLayer.overwriteClip(markerChild, targetInSeconds);
                     // Retrieve clip
-                    var clip = Utils.getLastUnnamedMarkerClip();
+                    var clip = MarkerUtils.getLastUnnamedMarkerClip();
                     // Set name
                     clip.name = message;
                     // Set length
@@ -125,7 +151,7 @@ var MarkerUtils = /** @class */ (function () {
         var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
         var markerClips = markerLayer.clips;
         var markerCount = markerClips.numItems;
-        Utils.fixPlayHeadPosition(Utils.projectFrameRate);
+        Utils.fixPlayHeadPosition();
         var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
         for (var i = 0; i < markerCount; i++) {
             var clip = markerClips[i];
@@ -159,13 +185,31 @@ var MarkerUtils = /** @class */ (function () {
 var Utils = /** @class */ (function () {
     function Utils() {
     }
-    Utils.fixPlayHeadPosition = function (frameRate) {
+    Utils.targetAllTracks = function (target) {
+        var currentSequence = app.project.activeSequence;
+        for (var i = 0; i < currentSequence.videoTracks.numTracks; i++) {
+            currentSequence.videoTracks[i].setTargeted(target, true);
+        }
+        for (var i = 0; i < currentSequence.audioTracks.numTracks; i++) {
+            currentSequence.audioTracks[i].setTargeted(target, true);
+        }
+    };
+    Utils.targetDefaultTracks = function () {
+        var currentSequence = app.project.activeSequence;
+        this.targetAllTracks(false);
+        for (var i = 0; i < Math.min(3, currentSequence.videoTracks.numTracks); i++) {
+            currentSequence.videoTracks[i].setTargeted(true, true);
+        }
+        if (currentSequence.audioTracks.numTracks > 0) {
+            currentSequence.audioTracks[0].setTargeted(true, true);
+        }
+    };
+    Utils.fixPlayHeadPosition = function () {
         var currentSequence = app.project.activeSequence;
         var currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
-        var ticksPerSecond = 254016000000;
-        var ticksPerFrame = ticksPerSecond / frameRate;
-        var newPos = Math.ceil(parseInt(currentPlayheadPosition) / ticksPerFrame);
-        currentSequence.setPlayerPosition(String(newPos * ticksPerFrame));
+        var ticksPerFrame = currentSequence.getSettings().videoFrameRate.ticks;
+        var newPos = Math.ceil(parseInt(currentPlayheadPosition) / parseInt(ticksPerFrame));
+        currentSequence.setPlayerPosition(String(newPos * parseInt(ticksPerFrame)));
     };
     Utils.pad = function (num, size) {
         var s = num.toString();
@@ -184,50 +228,7 @@ var Utils = /** @class */ (function () {
         }
         return projectItem;
     };
-    Utils.getMarkerItemInMarkerFolder = function (markerColor) {
-        for (var i = 0; i < app.project.rootItem.children.numItems; i++) {
-            var child = app.project.rootItem.children[i];
-            if (child.name === "marker") {
-                for (var j = 0; j < child.children.numItems; j++) {
-                    var markerChild = child.children[j];
-                    if (markerChild.name === markerColor) {
-                        return markerChild;
-                    }
-                }
-            }
-        }
-        return undefined;
-    };
-    Utils.getLastUnnamedMarkerClip = function () {
-        var currentSequence = app.project.activeSequence;
-        var markerLayer = currentSequence.videoTracks[currentSequence.videoTracks.numTracks - 1];
-        var markerClips = markerLayer.clips;
-        var markerCount = markerClips.numItems;
-        var lastMarker = markerClips[markerCount - 1];
-        debugger;
-        // Dirty coded dirty hack, premiere is... not exact with its ticks?!
-        // If last marker has no name = This is my new marker. If it has a name -> stretched mode marker
-        if (lastMarker.name === "0" ||
-            lastMarker.name === "1" ||
-            lastMarker.name === "2" ||
-            lastMarker.name === "3" ||
-            lastMarker.name === "4" ||
-            lastMarker.name === "5" ||
-            lastMarker.name === "6" ||
-            lastMarker.name === "7" ||
-            lastMarker.name === "8" ||
-            lastMarker.name === "9" ||
-            lastMarker.name === "10" ||
-            lastMarker.name === "11" ||
-            lastMarker.name === "12" ||
-            lastMarker.name === "13" ||
-            lastMarker.name === "14" ||
-            lastMarker.name === "15") {
-            return lastMarker;
-        }
-        return markerClips[markerCount - 2];
-    };
-    Utils.projectFrameRate = 24;
+    Utils.ticksPerSecond = 254016000000;
     return Utils;
 }());
 /**
@@ -294,6 +295,33 @@ var host = {
      */
     deselectAll: function () {
         MarkerUtils.deselectAll();
+    },
+    /**
+     * @swagger
+     * /targetAllTracks:
+     *      get:
+     *          description: Sets the target of all tracks to activated.
+     */
+    targetAllTracks: function () {
+        Utils.targetAllTracks(true);
+    },
+    /**
+     * @swagger
+     * /untargetAllTracks:
+     *      get:
+     *          description: Sets the target of all tracks to deactivated.
+     */
+    untargetAllTracks: function () {
+        Utils.targetAllTracks(false);
+    },
+    /**
+     * @swagger
+     * /targetDefaultTracks:
+     *      get:
+     *          description: Targets the default tracks (video 1-3, audio 1).
+     */
+    targetDefaultTracks: function () {
+        Utils.targetDefaultTracks();
     }
 };
 /**
