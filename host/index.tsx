@@ -253,6 +253,19 @@ class Utils {
     }
   }
 
+  static targetTracks(videoTrack: number, audioTrack: number) {
+    this.targetAllTracks(false)
+
+    const currentSequence = app.project.activeSequence;
+    
+    if(currentSequence.videoTracks.numTracks > videoTrack) {
+      currentSequence.videoTracks[videoTrack].setTargeted(true, true);
+    }
+    if(currentSequence.audioTracks.numTracks > audioTrack) {
+      currentSequence.audioTracks[audioTrack].setTargeted(true, true);
+    }
+  }
+
   static fixPlayHeadPosition(): void {
     const currentSequence = app.project.activeSequence;
     const currentPlayheadPosition = currentSequence.getPlayerPosition().ticks;
@@ -382,6 +395,25 @@ const host = {
    */
   targetDefaultTracks: function() {
     Utils.targetDefaultTracks();
+  },
+
+  /**
+   * @swagger
+   * /targetTracks?videoTrack={videoTrack}&audioTrack={audioTrack}:
+   *      get:
+   *          description: Untargets all tracks. Then, only targets the specified tracks.
+   *          parameters:
+   *              - name: videoTrack
+   *                description: the single video track to target (starting at 1)
+   *                in: path
+   *                type: number
+   *              - name: audioTrack
+   *                description: the single audio track to target (starting at 1)
+   *                in: path
+   *                type: number
+   */
+  targetTracks: function(videoTrack: string, audioTrack: string) {
+    Utils.targetTracks(parseInt(videoTrack) - 1, parseInt(audioTrack) - 1);
   }
 
 };
