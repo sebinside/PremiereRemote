@@ -254,7 +254,7 @@ class Utils {
   }
 
   static targetTracks(videoTrack: number, audioTrack: number) {
-    this.targetAllTracks(false)
+    this.targetAllTracks(false);
 
     const currentSequence = app.project.activeSequence;
     
