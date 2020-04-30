@@ -232,6 +232,29 @@ class MarkerUtils {
 class Utils {
   static ticksPerSecond = 254016000000;
 
+  static getFirstSelectedClip(videoClip: Boolean) {
+    const currentSequence = app.project.activeSequence;
+    const tracks = videoClip ? currentSequence.videoTracks : currentSequence.audioTracks;
+    for (let i = 0; i < tracks.numTracks; i++) {
+      for (let j = 0; j < tracks[i].clips.numItems; j++) {
+          const currentClip = tracks[i].clips[j];
+          if(currentClip.isSelected()) {
+            return { clip: currentClip,
+              trackIndex: i,
+              clipIndex: j
+            }
+          }
+      }
+    }
+    return null;
+  }
+
+  static getQEVideoClip(trackIndex : number, clipIndex : number) {
+    const currentSequence = qe.project.getActiveSequence();
+    // Yes, 1-based
+    return currentSequence.getVideoTrackAt(trackIndex).getItemAt(clipIndex + 1);
+  }
+
   static targetAllTracks(target: boolean) {
     const currentSequence = app.project.activeSequence;
     for(let i = 0; i < currentSequence.videoTracks.numTracks; i++) {
@@ -294,6 +317,29 @@ class Utils {
 
     return projectItem;
   }
+}
+
+class EffectUtils {
+
+  static applyEffectOnFirstSelectedVideoClip(effectName: String) {
+    const clipInfo = Utils.getFirstSelectedClip(true)
+    const qeClip = Utils.getQEVideoClip(clipInfo.trackIndex, clipInfo.clipIndex)
+    var effect = qe.project.getVideoEffectByName(effectName);
+    qeClip.addVideoEffect(effect);
+
+    // For better usability, always return the newest effects (this ones) properties! 
+    return clipInfo.clip.components[2].properties;
+  }
+
+  static applyDropShadowPreset() {
+    const shadowEffectProperties = this.applyEffectOnFirstSelectedVideoClip("Schlagschatten");
+    const opacity = shadowEffectProperties[1];
+    const softness = shadowEffectProperties[4];
+
+    opacity.setValue(255, true);
+    softness.setValue(44, true);
+  }
+
 }
 
 /**
@@ -385,6 +431,16 @@ const host = {
    */
   untargetAllTracks: function() {
     Utils.targetAllTracks(false);
+  },
+
+  /**
+   * @swagger
+   * /applyDropShadowPreset:
+   *      get:
+   *          description: Applies the custom tweaked drop shadow effect on the first currently selected clip.
+   */
+  applyDropShadowPreset: function() {
+    EffectUtils.applyDropShadowPreset();
   },
 
   /**

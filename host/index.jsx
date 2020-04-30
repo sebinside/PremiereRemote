@@ -185,6 +185,27 @@ var MarkerUtils = /** @class */ (function () {
 var Utils = /** @class */ (function () {
     function Utils() {
     }
+    Utils.getFirstSelectedClip = function (videoClip) {
+        var currentSequence = app.project.activeSequence;
+        var tracks = videoClip ? currentSequence.videoTracks : currentSequence.audioTracks;
+        for (var i = 0; i < tracks.numTracks; i++) {
+            for (var j = 0; j < tracks[i].clips.numItems; j++) {
+                var currentClip = tracks[i].clips[j];
+                if (currentClip.isSelected()) {
+                    return { clip: currentClip,
+                        trackIndex: i,
+                        clipIndex: j
+                    };
+                }
+            }
+        }
+        return null;
+    };
+    Utils.getQEVideoClip = function (trackIndex, clipIndex) {
+        var currentSequence = qe.project.getActiveSequence();
+        // Yes, 1-based
+        return currentSequence.getVideoTrackAt(trackIndex).getItemAt(clipIndex + 1);
+    };
     Utils.targetAllTracks = function (target) {
         var currentSequence = app.project.activeSequence;
         for (var i = 0; i < currentSequence.videoTracks.numTracks; i++) {
@@ -240,6 +261,26 @@ var Utils = /** @class */ (function () {
     };
     Utils.ticksPerSecond = 254016000000;
     return Utils;
+}());
+var EffectUtils = /** @class */ (function () {
+    function EffectUtils() {
+    }
+    EffectUtils.applyEffectOnFirstSelectedVideoClip = function (effectName) {
+        var clipInfo = Utils.getFirstSelectedClip(true);
+        var qeClip = Utils.getQEVideoClip(clipInfo.trackIndex, clipInfo.clipIndex);
+        var effect = qe.project.getVideoEffectByName(effectName);
+        qeClip.addVideoEffect(effect);
+        // For better usability, always return the newest effects (this ones) properties! 
+        return clipInfo.clip.components[2].properties;
+    };
+    EffectUtils.applyDropShadowPreset = function () {
+        var shadowEffectProperties = this.applyEffectOnFirstSelectedVideoClip("Schlagschatten");
+        var opacity = shadowEffectProperties[1];
+        var softness = shadowEffectProperties[4];
+        opacity.setValue(255, true);
+        softness.setValue(44, true);
+    };
+    return EffectUtils;
 }());
 /**
  * ALL functions defined here are visible via the localhost REST-like service.
@@ -323,6 +364,15 @@ var host = {
      */
     untargetAllTracks: function () {
         Utils.targetAllTracks(false);
+    },
+    /**
+     * @swagger
+     * /applyDropShadowPreset:
+     *      get:
+     *          description: Applies the custom tweaked drop shadow effect on the first currently selected clip.
+     */
+    applyDropShadowPreset: function () {
+        EffectUtils.applyDropShadowPreset();
     },
     /**
      * @swagger
