@@ -201,10 +201,19 @@ var Utils = /** @class */ (function () {
         }
         return null;
     };
-    Utils.getQEVideoClip = function (trackIndex, clipIndex) {
+    Utils.getVideoClip = function (trackIndex, clipIndex) {
+        var currentSequence = app.project.activeSequence;
+        return currentSequence.videoTracks[trackIndex].clips[clipIndex];
+    };
+    Utils.getQEVideoClipByStart = function (trackIndex, startInTicks) {
         var currentSequence = qe.project.getActiveSequence();
-        // Yes, 1-based
-        return currentSequence.getVideoTrackAt(trackIndex).getItemAt(clipIndex + 1);
+        var videoTrack = currentSequence.getVideoTrackAt(trackIndex);
+        for (var i = 0; i < videoTrack.numItems; i++) {
+            var clip = videoTrack.getItemAt(i);
+            if (clip.start.ticks === startInTicks) {
+                return clip;
+            }
+        }
     };
     Utils.targetAllTracks = function (target) {
         var currentSequence = app.project.activeSequence;
@@ -265,9 +274,14 @@ var Utils = /** @class */ (function () {
 var EffectUtils = /** @class */ (function () {
     function EffectUtils() {
     }
+    EffectUtils.setZoomOfCurrentClip = function (zoomLevel) {
+        var clipInfo = Utils.getFirstSelectedClip(true);
+        var scaleInfo = clipInfo.clip.components[1].properties[1];
+        scaleInfo.setValue(zoomLevel, true);
+    };
     EffectUtils.applyEffectOnFirstSelectedVideoClip = function (effectName) {
         var clipInfo = Utils.getFirstSelectedClip(true);
-        var qeClip = Utils.getQEVideoClip(clipInfo.trackIndex, clipInfo.clipIndex);
+        var qeClip = Utils.getQEVideoClipByStart(clipInfo.trackIndex, clipInfo.clip.start.ticks);
         var effect = qe.project.getVideoEffectByName(effectName);
         qeClip.addVideoEffect(effect);
         // For better usability, always return the newest effects (this ones) properties! 
@@ -279,6 +293,16 @@ var EffectUtils = /** @class */ (function () {
         var softness = shadowEffectProperties[4];
         opacity.setValue(255, true);
         softness.setValue(44, true);
+    };
+    EffectUtils.applyBlurPreset = function () {
+        var blurEffectProperties = this.applyEffectOnFirstSelectedVideoClip("Gaußscher Weichzeichner");
+        var blurriness = blurEffectProperties[0];
+        var repeatBorderPixels = blurEffectProperties[2];
+        blurriness.setValue(42, true);
+        repeatBorderPixels.setValue(true, true);
+    };
+    EffectUtils.applyWarpStabilizer = function () {
+        this.applyEffectOnFirstSelectedVideoClip("Verkrümmungsstabilisierung");
     };
     return EffectUtils;
 }());
@@ -373,6 +397,33 @@ var host = {
      */
     applyDropShadowPreset: function () {
         EffectUtils.applyDropShadowPreset();
+    },
+    /**
+     * @swagger
+     * /applyBlurPreset:
+     *      get:
+     *          description: Applies the custom tweaked gaussian blur effect on the first currently selected clip.
+     */
+    applyBlurPreset: function () {
+        EffectUtils.applyBlurPreset();
+    },
+    /**
+     * @swagger
+     * /applyWarpStabilizer:
+     *      get:
+     *          description: Applies the warp stabilizer effect on the first currently selected clip.
+     */
+    applyWarpStabilizer: function () {
+        EffectUtils.applyWarpStabilizer();
+    },
+    /**
+     * @swagger
+     * /zoomInTo120percent:
+     *      get:
+     *          description: Sets the scale of the current clip to 120 percent.
+     */
+    zoomInTo120percent: function () {
+        EffectUtils.setZoomOfCurrentClip(120);
     },
     /**
      * @swagger

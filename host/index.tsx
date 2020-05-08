@@ -249,10 +249,23 @@ class Utils {
     return null;
   }
 
-  static getQEVideoClip(trackIndex : number, clipIndex : number) {
+  static getVideoClip(trackIndex: number, clipIndex: number) {
+    const currentSequence = app.project.activeSequence;
+    return currentSequence.videoTracks[trackIndex].clips[clipIndex];
+  }
+
+  static getQEVideoClipByStart(trackIndex : number, startInTicks : string) {
     const currentSequence = qe.project.getActiveSequence();
-    // Yes, 1-based
-    return currentSequence.getVideoTrackAt(trackIndex).getItemAt(clipIndex + 1);
+    const videoTrack = currentSequence.getVideoTrackAt(trackIndex);
+
+    for(let i = 0; i < videoTrack.numItems; i++) {
+      const clip = videoTrack.getItemAt(i);
+
+      if(clip.start.ticks === startInTicks) {
+        return clip;
+      }
+
+    }
   }
 
   static targetAllTracks(target: boolean) {
@@ -265,7 +278,7 @@ class Utils {
     }
   }
 
-  static targetDefaultTracks() {
+  static targetDefaultTracks() { 
     const currentSequence = app.project.activeSequence;
     this.targetAllTracks(false);
     for (let i = 0; i < Math.min(3, currentSequence.videoTracks.numTracks); i++) {
@@ -321,9 +334,15 @@ class Utils {
 
 class EffectUtils {
 
+  static setZoomOfCurrentClip(zoomLevel: number) {
+    const clipInfo = Utils.getFirstSelectedClip(true)
+    const scaleInfo = clipInfo.clip.components[1].properties[1];
+    scaleInfo.setValue(zoomLevel, true);
+  }
+
   static applyEffectOnFirstSelectedVideoClip(effectName: String) {
     const clipInfo = Utils.getFirstSelectedClip(true)
-    const qeClip = Utils.getQEVideoClip(clipInfo.trackIndex, clipInfo.clipIndex)
+    const qeClip = Utils.getQEVideoClipByStart(clipInfo.trackIndex, clipInfo.clip.start.ticks)
     var effect = qe.project.getVideoEffectByName(effectName);
     qeClip.addVideoEffect(effect);
 
@@ -331,13 +350,27 @@ class EffectUtils {
     return clipInfo.clip.components[2].properties;
   }
 
-  static applyDropShadowPreset() {
+  static applyDropShadowPreset() { 
     const shadowEffectProperties = this.applyEffectOnFirstSelectedVideoClip("Schlagschatten");
     const opacity = shadowEffectProperties[1];
     const softness = shadowEffectProperties[4];
 
     opacity.setValue(255, true);
     softness.setValue(44, true);
+  }
+
+  static applyBlurPreset() {
+    const blurEffectProperties = this.applyEffectOnFirstSelectedVideoClip("Gaußscher Weichzeichner");
+
+    const blurriness = blurEffectProperties[0];
+    const repeatBorderPixels = blurEffectProperties[2];
+
+    blurriness.setValue(42, true);
+    repeatBorderPixels.setValue(true, true);
+  }
+
+  static applyWarpStabilizer() {
+    this.applyEffectOnFirstSelectedVideoClip("Verkrümmungsstabilisierung");
   }
 
 }
@@ -441,6 +474,36 @@ const host = {
    */
   applyDropShadowPreset: function() {
     EffectUtils.applyDropShadowPreset();
+  },
+
+  /**
+   * @swagger
+   * /applyBlurPreset:
+   *      get:
+   *          description: Applies the custom tweaked gaussian blur effect on the first currently selected clip.
+   */
+  applyBlurPreset: function() {
+    EffectUtils.applyBlurPreset();
+  },
+
+  /**
+   * @swagger
+   * /applyWarpStabilizer:
+   *      get:
+   *          description: Applies the warp stabilizer effect on the first currently selected clip.
+   */
+  applyWarpStabilizer: function() {
+    EffectUtils.applyWarpStabilizer();
+  },
+
+  /**
+   * @swagger
+   * /zoomInTo120percent:
+   *      get:
+   *          description: Sets the scale of the current clip to 120 percent.
+   */
+  zoomInTo120percent: function() {
+    EffectUtils.setZoomOfCurrentClip(120);
   },
 
   /**
