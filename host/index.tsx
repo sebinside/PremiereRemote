@@ -254,6 +254,31 @@ class Utils {
     return currentSequence.videoTracks[trackIndex].clips[clipIndex];
   }
 
+  static zoomToFit(videoClip) {
+    if(videoClip != null) {
+      const clipSize = this.getClipSize(videoClip.clip);
+      const frameHeight = app.project.activeSequence.frameSizeVertical;
+      const frameWidth = app.project.activeSequence.frameSizeHorizontal;
+
+      const verticalFactor = frameHeight / clipSize.height;
+      const horizontalFactor = frameWidth / clipSize.width;
+      
+      const zoomLevel = Math.max(verticalFactor, horizontalFactor) * 100;
+
+      EffectUtils.setZoomOfCurrentClip(zoomLevel);
+    }
+  }
+
+  static getClipSize(videoClip: TrackItem) {
+    const projectItem = videoClip.projectItem;
+    const videoInfo = Utils.getProjectMetadata(projectItem, 
+      ["Column.Intrinsic.VideoInfo"])[0][0].toString();
+
+    const width = parseInt(videoInfo.split(' ')[0]);
+    const height = parseInt(videoInfo.split(' ')[2]);
+    return {"height": height, "width": width}
+  }
+
   static getQEVideoClipByStart(trackIndex : number, startInTicks : string) {
     const currentSequence = qe.project.getActiveSequence();
     const videoTrack = currentSequence.getVideoTrackAt(trackIndex);
@@ -329,6 +354,32 @@ class Utils {
     }
 
     return projectItem;
+  }
+
+  static getProjectMetadata(projectItem: ProjectItem, fieldNames) {
+    // Based on: https://community.adobe.com/t5/premiere-pro/get-image-size-in-jsx/td-p/10554914?page=1&profile.language=de
+    const kPProPrivateProjectMetadataURI ="http://ns.adobe.com/premierePrivateProjectMetaData/1.0/";
+    if (app.isDocumentOpen()) {
+        if (projectItem) {
+
+            if (ExternalObject.AdobeXMPScript === undefined)
+                ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+            if (ExternalObject.AdobeXMPScript !== undefined) {
+                let retArray = [];
+                let retArray2 = [];
+                const projectMetadata = projectItem.getProjectMetadata();
+                let xmp = new XMPMeta(projectMetadata);
+                for (let pc = 0; pc < fieldNames.length; pc++) {
+                    if (xmp.doesPropertyExist(kPProPrivateProjectMetadataURI, fieldNames[pc])) {
+                        retArray.push([fieldNames[pc],xmp.getProperty(kPProPrivateProjectMetadataURI, fieldNames[pc])]);
+                        retArray2.push([xmp.getProperty(kPProPrivateProjectMetadataURI,fieldNames[pc])]);
+                    }
+                }
+                return retArray2;
+            }
+        }
+    }
+    return false;
   }
 }
 
@@ -484,6 +535,16 @@ const host = {
    */
   applyBlurPreset: function() {
     EffectUtils.applyBlurPreset();
+  },
+
+  /**
+   * @swagger
+   * /zoomCurrentClipToFit:
+   *      get:
+   *          description: Sets the scale of the first selected clip to match the sequence size.
+   */
+  zoomCurrentClipToFit: function() {
+    Utils.zoomToFit(Utils.getFirstSelectedClip(true));
   },
 
   /**
