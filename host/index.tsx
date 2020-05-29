@@ -385,6 +385,26 @@ class Utils {
 
 class EffectUtils {
 
+  static changeAudioLevel(clip: TrackItem, levelInDb: number) {
+    const levelInfo = clip.components[0].properties[1];
+    const level = 20 * Math.log(parseFloat(levelInfo.getValue())) * Math.LOG10E + 15;
+    const newLevel = level + levelInDb;
+    const encodedLevel = Math.min(Math.pow(10, (newLevel - 15)/20), 1.0);
+    levelInfo.setValue(encodedLevel, true);
+  }
+
+  static changeAllAudioLevels(levelInDb: number) {
+    const currentSequence = app.project.activeSequence;
+    for (let i = 0; i < currentSequence.audioTracks.numTracks; i++) {
+      for (let j = 0; j < currentSequence.audioTracks[i].clips.numItems; j++) {
+          const currentClip = currentSequence.audioTracks[i].clips[j];
+          if(currentClip.isSelected()) {
+           this.changeAudioLevel(currentClip, levelInDb);
+          }
+      }
+    }
+  }
+
   static setZoomOfCurrentClip(zoomLevel: number) {
     const clipInfo = Utils.getFirstSelectedClip(true)
     const scaleInfo = clipInfo.clip.components[1].properties[1];
@@ -515,6 +535,21 @@ const host = {
    */
   untargetAllTracks: function() {
     Utils.targetAllTracks(false);
+  },
+
+  /**
+   * @swagger
+   * /changeAudioLevels?level={level}:
+   *      get:
+   *          description: Changes the audio level of all selected audio track items.
+   *          parameters:
+   *              - name: level
+   *                description: level change in dB (levels over +15dB are not supported)
+   *                in: path
+   *                type: number
+   */
+  changeAudioLevels: function(level: string) {
+    EffectUtils.changeAllAudioLevels(parseInt(level));
   },
 
   /**
