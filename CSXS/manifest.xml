@@ -19,7 +19,7 @@
       <DispatchInfo>
         <Resources>
           <MainPath>./client/index.html</MainPath>
-          <ScriptPath>./host/index.jsx</ScriptPath>
+          <ScriptPath>./host/build/out/index.jsx</ScriptPath>
          <CEFCommandLine>
             <Parameter>--enable-nodejs</Parameter>
           </CEFCommandLine>

@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.jsx",
-  "dependencies": {},
-  "devDependencies": {},
   "scripts": {
-    "run": "tsc index.tsx --outfile index.jsx --watch"
+    "build": "tsc || node esbuild.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.14.36"
+  }
 }

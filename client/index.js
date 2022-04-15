@@ -17,7 +17,7 @@ const options = {
         },
     },
     // List of files to be processed
-    apis: [dir + '/../host/index.jsx'],
+    apis: [dir + '/../host/build/out/index.jsx'],
 };
 
 const specs = swaggerJsDoc(options);

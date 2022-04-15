@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
-    "module": "none",
+    "module": "ES6",
+    "target": "ES5",
     "noLib": true,
-    "outFile": "index.jsx"
+    "jsx":  "preserve",
+    "outDir": "build"
   }
 }
