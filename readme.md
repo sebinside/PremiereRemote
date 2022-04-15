@@ -47,6 +47,7 @@ This short guide will show how to install and use the AHK2PremiereCEP-Framework.
    ```
 
    In newer versions there will be more code inside of the JSX-File. You can ignore or simply delete it, I just upload my very own functions to this repository!
+   
 
 ## Using AutoHotkey
 
@@ -75,13 +76,17 @@ Although, this framework enables faster integration of new, custom made CEP func
 3. You might use *derkalaenders* [CEPReloader](https://github.com/derkalaender/CEPReloader) for easier reopening of extensions. It speeds up the workflow quite a bit. The `kill` - function, shown above, does only exist for this integration. If you don't want to use the reloader-extension, you can delete the kill-functionality inside of the framework.
 4. Last but not least, these extensions enables debugging by default. Using chrome web debugger, you can simply connect to `http://localhost:8004` (by default) and see the javascript console output in real time.
 
+### Typescript Support
+
+OPTIONAL: There is a version with typescript support available, based on [Types-for-Adobe](https://github.com/pravdomil/Types-for-Adobe). To work with this version, please checkout the branch `rework`. Install the typescript compiler `tsc`, use `npm install` again in the `host` folder and `npm run-script run` to start typescript compilation from the `index.tsx` to `index.jsx`. Although this version is more advanced, type support might be worth the extra effort.
+
 ## More
 
 If you want learn more about using AutoHotkey and the Adobe CEP SDK, have a look at this:
 
 * Adobe CEP Premiere Samples: https://github.com/Adobe-CEP/Samples/blob/master/PProPanel/jsx/PPRO/Premiere.jsx
 * Premiere On Script, a Premiere CEP youtube channel: https://www.youtube.com/channel/UCmq_t_-4GLFu_nYaEDDModw
-* Taran Van Hermet, a macro specialist: https://www.youtube.com/user/TaranVH
+* Taran Van Hemert, a macro specialist: https://www.youtube.com/user/TaranVH
 * And my own twitch channel, were I develop with these techniques, sometimes: https://www.twitch.tv/skate702
 
 If there are more questions, you can contact me on [Twitter](https://twitter.com/skate702) or via [mail](mailto:hi@sebinside.de).
