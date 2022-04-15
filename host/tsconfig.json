@@ -4,6 +4,8 @@
     "target": "ES5",
     "noLib": true,
     "jsx":  "preserve",
-    "outDir": "build"
+    "outDir": "build",
+    "rootDir": "src",
+    "skipLibCheck": true
   }
 }

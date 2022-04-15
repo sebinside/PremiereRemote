@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.jsx",
   "scripts": {
-    "build": "tsc || node esbuild.js"
+    "build": "tsc && node esbuild.js"
   },
   "keywords": [],
   "author": "",
