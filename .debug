@@ -1,6 +1,6 @@
  <?xml version="1.0" encoding="UTF-8"?>
  <ExtensionList>
-        <Extension Id="de.sebinside.premiereahk.panel">
+        <Extension Id="de.sebinside.premiereremote.panel">
            <HostList>
             <Host Name="PHXS" Port="8000"/>
             <Host Name="IDSN" Port="8001"/>
