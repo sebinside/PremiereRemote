@@ -3,9 +3,9 @@
 ![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
 ![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
 
-Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g. by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside Premiere on your local machine. Any custom functionality can then be triggerd using a local http request.
+Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request.
 
-Let's take a custom function like locking a video track inside of Premiere Pro. Without CEP, you have to use image recognition or similar techniques. With CEP, you can define your own javascript function using extendscript:
+Let's take a custom function like locking a video track inside of Premiere Pro. Unfortunately, there are no shortcuts available without modification. With CEP, you can define your own javascript function using extendscript:
 
 ```js
 function lockVideoLayer(layerNumber) {
