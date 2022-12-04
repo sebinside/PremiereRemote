@@ -24,6 +24,8 @@ $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
 
 Of course, you can also embed this line of code in a AHK-script or even remote control your Premiere instace. Sounds interesting? Let's get started!
 
+**⚠️ The following documentation is partly outdated and will be updated soon™️ ⚠️**
+
 ## Getting started
 
 This short guide will show how to install and use the AHK2PremiereCEP-Framework.
