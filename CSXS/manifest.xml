@@ -1,25 +1,25 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<ExtensionManifest ExtensionBundleId="de.sebinside.premiereahk" ExtensionBundleVersion="1.0.0" Version="7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ExtensionManifest ExtensionBundleId="de.sebinside.premiereremote" ExtensionBundleVersion="1.0.0" Version="7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="de.sebinside.premiereahk.panel" Version="1.0.0" />
+    <Extension Id="de.sebinside.premiereremote.panel" Version="2.0.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
-      <Host Name="PPRO" Version="[12.0,99.9]" />
+      <Host Name="PPRO" Version="[15.0,99.9]" />
     </HostList>
     <LocaleList>
       <Locale Code="All" />
     </LocaleList>
     <RequiredRuntimeList>
-      <RequiredRuntime Name="CSXS" Version="7.0" />
+      <RequiredRuntime Name="CSXS" Version="11.0" />
     </RequiredRuntimeList>
   </ExecutionEnvironment>
   <DispatchInfoList>
-    <Extension Id="de.sebinside.premiereahk.panel">
+    <Extension Id="de.sebinside.premiereremote.panel">
       <DispatchInfo>
         <Resources>
           <MainPath>./client/index.html</MainPath>
-          <ScriptPath>./host/index.jsx</ScriptPath>
+          <ScriptPath>./host/build/out/index.jsx</ScriptPath>
          <CEFCommandLine>
             <Parameter>--enable-nodejs</Parameter>
           </CEFCommandLine>
@@ -29,7 +29,7 @@
         </Lifecycle>
         <UI>
           <Type>Panel</Type>
-          <Menu>AHK2CEP - Premiere</Menu>
+          <Menu>PremiereRemote</Menu>
           <Geometry>
             <Size>
               <Height>50</Height>

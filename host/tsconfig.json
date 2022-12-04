@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "ES6",
+    "target": "ES5",
+    "noLib": true,
+    "jsx":  "preserve",
+    "outDir": "build",
+    "rootDir": "src",
+    "skipLibCheck": true
+  }
+}

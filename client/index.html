@@ -2,20 +2,20 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AHK2CEP - Premiere</title>
+    <title>PremiereRemote</title>
     <link rel="stylesheet" href="main.css">
     <script type="text/javascript" src="CSInterface.js"></script>
     <script type="text/javascript" src="index.js"></script>
-
-    <!-- Paradigm fail, but needed for endpoint construction -->
-    <script type="text/javascript" src="../host/index.jsx"></script>
+    <script type="text/javascript" src="../host/build/out/index.jsx"></script>
 
     <!-- Change this port, if there are conflicts with other software -->
     <script type="text/javascript">
+        const PREMIERE_REMOTE_VERSION = "2.0.0";
         const SERVER_PORT = 8081;
         const ENABLE_QE = true;
     </script>
 </head>
+
 <body ondblclick="openHostWindow()">
     <div id="statusContainer" class="red">Loading...</div>
     <div id="lastCommandContainer">Last Command...</div>
