@@ -1,4 +1,4 @@
-# PremiereRemote - Customizable remote access to Adobe Premiere
+# PremiereRemote - Customizable remote access to Premiere
 
 ![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
 ![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
