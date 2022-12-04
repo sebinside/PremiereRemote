@@ -1,22 +1,28 @@
-# AHK to Premiere CEP
+# PremiereRemote - Customizable remote access to Adobe Premiere
 
-Using the Adobe Premiere Extension mechanism, this project provides a framework to trigger your own Premiere CEP functions from outside of Premiere, e.g. from [AutoHotkey](https://autohotkey.com/). This is achieved by using a RESTful-like service, started inside Premiere on your localhost. Every custom function can then be triggerd using a local http request.
+![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
+![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
 
-Let's take a custom function like locking a video track inside of Premiere. Without CEP, you have to use image recognition or similar techniques. With CEP, you can define your own javascript function using extendscript:
+Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g. by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside Premiere on your local machine. Any custom functionality can then be triggerd using a local http request.
 
-```
+Let's take a custom function like locking a video track inside of Premiere Pro. Without CEP, you have to use image recognition or similar techniques. With CEP, you can define your own javascript function using extendscript:
+
+```js
 function lockVideoLayer(layerNumber) {
-    // ...
+  app.enableQE();
+  var activeSequence = qe.project.getActiveSequence();
+  var someTrack = activeSequence.getVideoTrackAt(layerNumber);
+  someTrack.setLock(true);
 }
 ```
 
-Using this framework, you can now easily trigger this function from outside of premiere with a http request. The required REST-like endpoint is generated automaticaly. In this case, e.g.:
+Using **PremiereRemote**, you can now easily trigger this function from outside of Premiere Pro with a http request. The required endpoint is generated automaticaly. In the case of the function `lockVideoLayer` presented above: 
 
 ```
 $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
 ```
 
-Of course, you can also embed this line of code in a AHK-script. Sounds interesting? Let's get started!
+Of course, you can also embed this line of code in a AHK-script or even remote control your Premiere instace. Sounds interesting? Let's get started!
 
 ## Getting started
 
