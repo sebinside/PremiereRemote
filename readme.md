@@ -2,6 +2,7 @@
 
 ![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
 ![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
+[![Custom](https://img.shields.io/badge/Custom%20Functionality-Available-green)](https://github.com/sebinside/PremiereRemote/tree/custom)
 
 Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request.
 
