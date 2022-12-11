@@ -87,22 +87,21 @@ F11::
 
 Quite easy, isn't it? Of course, you can change the port on your localhost. Have a look at the `index.html`- file for this. Also, Authotkey is only one example on how your custom Premiere Pro functionality can be called. Any application that can execute HTTP-requests is capable of triggering your functions.
 
-## Development Workflow
+## Development
 
-Although, this framework enables faster integration of new, custom made CEP functions, the development workflow isn't that great. Here is my workflow for easy debugging:
+Here is my workflow for easy development and debugging of your own [CEP](https://github.com/Adobe-CEP)-based functionality:
 
-1. Start developing your new function using the *Adobe ExtendScript Toolkit*. Just specify `Adobe Premiere CC` as targed and you're ready to go with your own javascript CEP code.
-2. After finishing with the development and testing of your new function, copy & paste the code inside the `index.jsx`-file. Then, reopen the extension and test it again using a browser, as shown above.
-3. You might use *derkalaenders* [CEPReloader](https://github.com/derkalaender/CEPReloader) for easier reopening of extensions. It speeds up the workflow quite a bit. The `kill` - function, shown above, does only exist for this integration. If you don't want to use the reloader-extension, you can delete the kill-functionality inside of the framework.
-4. Last but not least, these extensions enables debugging by default. Using chrome web debugger, you can simply connect to `http://localhost:8004` (by default) and see the javascript console output in real time.
+1. Start developing your new function using the [ExtendScript Debugger](https://marketplace.visualstudio.com/items?itemName=Adobe.extendscript-debug) extension for [Visual Studio Code](https://code.visualstudio.com/). Just specify Adobe Premiere as targed and you're ready to go with your own javascript CEP code.
+2. After finishing with the development and testing of your new function, copy & paste the code inside the `index.tsx`-file. Alternatively, you can use multiple files to organize your code, as demonstrated [here](https://github.com/sebinside/PremiereRemote/tree/custom).
+3. After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. 
+4. Then, reopen the **PremiereRemote** extension via `Window` -> `Extensions` and test it again, e.g., by using a browser, as shown above.
+5. Optional: This extension enables debugging by default. Using chrome web debugger, you can simply connect to `http://localhost:8004` (by default) and see the javascript console output in real time.
 
-### Typescript Support
-
-OPTIONAL: There is a version with typescript support available, based on [Types-for-Adobe](https://github.com/pravdomil/Types-for-Adobe). To work with this version, please checkout the branch `rework`. Install the typescript compiler `tsc`, use `npm install` again in the `host` folder and `npm run-script run` to start typescript compilation from the `index.tsx` to `index.jsx`. Although this version is more advanced, type support might be worth the extra effort.
+Custom functionality inside the `host` folder is written in TypeScript and is based on [Types-for-Adobe](https://github.com/pravdomil/Types-for-Adobe).
 
 ## More
 
-If you want learn more about using AutoHotkey and the Adobe CEP SDK, have a look at this:
+If you want learn more about using the Adobe CEP SDK or AutoHotkey, have a look at this:
 
 * Adobe CEP Premiere Samples: https://github.com/Adobe-CEP/Samples/blob/master/PProPanel/jsx/PPRO/Premiere.jsx
 * Premiere On Script, a Premiere CEP youtube channel: https://www.youtube.com/channel/UCmq_t_-4GLFu_nYaEDDModw
