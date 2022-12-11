@@ -25,6 +25,7 @@ $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
 
 Of course, you can also embed this line of code in a AHK-script or even remote control your Premiere instance from another computer. Sounds interesting? Let's get started!
 
+
 ## Getting started
 
 This short guide will show how to install and use the **PremiereRemote** framework.
@@ -50,20 +51,19 @@ This short guide will show how to install and use the **PremiereRemote** framewo
 
 4. Double click the extension window. This should open the plugins `host`- folder. Inside the folder `src`, you can add your own functionality, e.g., in the `index.tsx`. Please stick to the format already used to ensure correct parsing and server setup from the framework-side. A semi-minimal `index.tsx`-file looks like this:
 
-   ⚠️ OUTDATED ⚠️
-
    ```
-   var host = {
+   export const host = {
        kill: function () {
-           // This method is only there for debugging purposes.
+           // This method is only there for debugging purposes and shall not be replaced.
        },
        yourNewFunction: function(param1, param2) {
            alert(param1 + " " + param2);
-       } // etc.
+       }
    }
    ```
    
    After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. You also have to close and repoen the **PremiereRemote** extension via `Window` -> `Extensions`. Note, that a restart of Premiere Pro is usually not required.
+
 
 ## Using AutoHotkey
 
