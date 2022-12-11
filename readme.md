@@ -23,23 +23,25 @@ Using **PremiereRemote**, you can now easily trigger this function from outside 
 $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
 ```
 
-Of course, you can also embed this line of code in a AHK-script or even remote control your Premiere instace. Sounds interesting? Let's get started!
-
-**⚠️ The following documentation is partly outdated and will be updated soon™️ ⚠️**
+Of course, you can also embed this line of code in a AHK-script or even remote control your Premiere instance from another computer. Sounds interesting? Let's get started!
 
 ## Getting started
 
-This short guide will show how to install and use the AHK2PremiereCEP-Framework.
+This short guide will show how to install and use the **PremiereRemote** framework.
 
-1. Start by cloning or downloading this repository. There is a [ready-to-use-version](https://github.com/sebinside/AHK2PremiereCEP/releases) available.
+0. Preconditions: Please make sure that your Adobe Premiere Pro version matches the version shown in the README file. Other versions might work but could break things.
 
-	Please note: This project uses npm to manage dependencies like the `express` web server. Don't forget to run `npm install` on the console inside the `client` folder. For more information, head over to https://nodejs.org/
+1. Start by cloning or downloading this repository. There is a [ready-to-use-version](https://github.com/sebinside/PremiereRemote/releases) available.
 
-2. Follow [this documentation](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_8.x/Documentation/CEP%208.0%20HTML%20Extension%20Cookbook.md) to install the extension. Basicaly, you have to:
+2. Follow [this documentation](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md) to install the extension. Basicaly, you have to:
 
-     1. Use `regedit` to allow the execution of unsigned Adobe Premiere extensions.
-     2. Copy the downloaded code inside of an extension folder, described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_8.x/Documentation/CEP%208.0%20HTML%20Extension%20Cookbook.md#extension-folders). E.g. `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\AHK2PremiereCEP`.
-     3. (Re) start Premiere.
+     1. Use `regedit` to allow the execution of unsigned Adobe Premiere extensions as described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md#debugging-unsigned-extensions).
+     2. Copy the downloaded code inside of an extension folder, described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md#extension-folders), e.g., `C:\Users\<USERNAME>\AppData\Roaming\Adobe\CEP\extensions\PremiereRemote`.
+     
+3. 
+
+4. (Re) start Adobe Premiere Pro.
+
 3. Now, you should see the Framework under `Window` -> `Extensions`. If there is no entry, you might recheck the documentation and compare your premiere version / setup with the `manifest.xml`- file, located inside the `CSXS`- folder. 
 
 4. Double click the extension window. This should open the plugins `host`- folder with a file named `index.jsx` in it. Here, you can define your own CEP functions. Please stick to the format already used to ensure correct parsing and server setup from the framework-side. You have to reopen the extension to load any changes. A semi-minimal index.jsx-file looks like this:
@@ -57,6 +59,7 @@ This short guide will show how to install and use the AHK2PremiereCEP-Framework.
 
    In newer versions there will be more code inside of the JSX-File. You can ignore or simply delete it, I just upload my very own functions to this repository!
    
+	Please note: This project uses npm to manage dependencies like the `express` web server. Don't forget to run `npm install` on the console inside the `client` folder. For more information, head over to https://nodejs.org/
 
 ## Using AutoHotkey
 
