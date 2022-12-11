@@ -17,7 +17,7 @@ function lockVideoLayer(layerNumber) {
 }
 ```
 
-Using **PremiereRemote**, you can now easily trigger this function from outside of Premiere Pro with a http request. The required endpoint is generated automaticaly. In the case of the function `lockVideoLayer` presented above: 
+Using **PremiereRemote**, you can now easily trigger this function from outside of Premiere Pro with a http request. The required endpoint is generated automaticaly. In the case of the default port `8081` and the function `lockVideoLayer` presented above: 
 
 ```
 $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
@@ -29,7 +29,7 @@ Of course, you can also embed this line of code in a AHK-script or even remote c
 
 This short guide will show how to install and use the **PremiereRemote** framework.
 
-0. Preconditions: Please make sure that your Adobe Premiere Pro version matches the version shown in the README file. Other versions might work but could break things.
+0. Preconditions: Please make sure that your Adobe Premiere Pro version matches the version shown in the README file. Other versions might work but could break things. Also, this framework requires [NodeJS](https://nodejs.org). Please install the current version, and verify that it is usable by, e.g., typing `npm --version`.
 
 1. Start by cloning or downloading this repository. There is a [ready-to-use-version](https://github.com/sebinside/PremiereRemote/releases) available.
 
@@ -38,13 +38,19 @@ This short guide will show how to install and use the **PremiereRemote** framewo
      1. Use `regedit` to allow the execution of unsigned Adobe Premiere extensions as described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md#debugging-unsigned-extensions).
      2. Copy the downloaded code inside of an extension folder, described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md#extension-folders), e.g., `C:\Users\<USERNAME>\AppData\Roaming\Adobe\CEP\extensions\PremiereRemote`.
      
-3. 
+3. Install the required dependencies to use **PremiereRemote**. 
+
+     1. Open a console window in the `PremiereRemote\client` folder. Execute `npm i` to install all dependencies. These dependencies are used to run the local web server inside of Premiere. 
+     2. Open a console window in the `PremiereRemote\host` folder. Execute `npm i` to install all dependencies. These dependencies are used for the development workflow.
+     3. In the same console window in the `PremiereRemote\host` folder, execute `npm run build`. This should generate a folder called `build`, where your custom functionality is contained.
 
 4. (Re) start Adobe Premiere Pro.
 
 3. Now, you should see the Framework under `Window` -> `Extensions`. If there is no entry, you might recheck the documentation and compare your premiere version / setup with the `manifest.xml`- file, located inside the `CSXS`- folder. 
 
-4. Double click the extension window. This should open the plugins `host`- folder with a file named `index.jsx` in it. Here, you can define your own CEP functions. Please stick to the format already used to ensure correct parsing and server setup from the framework-side. You have to reopen the extension to load any changes. A semi-minimal index.jsx-file looks like this:
+4. Double click the extension window. This should open the plugins `host`- folder. Inside the folder `src`, you can add your own functionality, e.g., in the `index.tsx`. Please stick to the format already used to ensure correct parsing and server setup from the framework-side. A semi-minimal `index.tsx`-file looks like this:
+
+   ⚠️ OUTDATED ⚠️
 
    ```
    var host = {
@@ -56,10 +62,8 @@ This short guide will show how to install and use the **PremiereRemote** framewo
        } // etc.
    }
    ```
-
-   In newer versions there will be more code inside of the JSX-File. You can ignore or simply delete it, I just upload my very own functions to this repository!
    
-	Please note: This project uses npm to manage dependencies like the `express` web server. Don't forget to run `npm install` on the console inside the `client` folder. For more information, head over to https://nodejs.org/
+   After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. You also have to close and repoen the **PremiereRemote** extension via `Window` -> `Extensions`. Note, that a restart of Premiere Pro is usually not required.
 
 ## Using AutoHotkey
 
