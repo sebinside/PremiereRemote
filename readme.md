@@ -85,7 +85,7 @@ F11::
 	return
 ```
 
-Quite easy, isn't it? Of course, you can change the port on your localhost. Have a look at the `index.html`- file for this. Also, AutHotkey is only one example on how your custom Premiere Pro functionality can be called. Any application that can execute HTTP-requests is capable of triggering your functions.
+Quite easy, isn't it? Of course, you can change the port on your localhost. Have a look at the `index.html`- file for this. Also, AutoHotkey is only one example on how your custom Premiere Pro functionality can be called. Any application that can execute HTTP-requests is capable of triggering your functions.
 
 Additionally, it is possible to return values from inside of Premiere Pro, by returning their serialized representation at the end of a function inside the `index.tsx` file. An example JSON-based result can look like this:
 
