@@ -26,7 +26,7 @@ $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
 Of course, you can also embed this line of code in a AHK-script or even remote control your Premiere instance from another computer. Sounds interesting? Let's get started!
 
 
-## Getting started
+## Installation
 
 This short guide will show how to install and use the **PremiereRemote** framework.
 
@@ -63,17 +63,21 @@ This short guide will show how to install and use the **PremiereRemote** framewo
    ```
    
    After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. You also have to close and repoen the **PremiereRemote** extension via `Window` -> `Extensions`. Note, that a restart of Premiere Pro is usually not required.
+   
+   There is more custom functionality available as inspiration or to directly use [here](https://github.com/sebinside/PremiereRemote/tree/custom).
 
 
-## Using AutoHotkey
+## Usage
 
-Now, you are ready to connect your own Premiere CEP functions, defined in the `index.jsx`-file to autohotkey. Test the REST-like endpoints in the browser of your choice, as shown above. E.g. use chrome and the url:
+Now, you are ready to call your own Premiere CEP functions, defined in the `host` variable of the `index.tsx`-file remotely. Test the endpoints in the browser of your choice, as shown above. For example, use Chrome and the url:
 
 ```
 http://localhost:8081/yourNewFunction?param1=Hello&param2=World
 ```
 
-On Windows 10, you can easily trigger this URL using the curl-functionality. AHK-Code wrapping this line would look like this:
+There is support for a [Swagger](https://swagger.io/)-based user interface (UI) to trigger your functionality. This UI is generated based on the annotations of the functions inside the `host` variable of the `index.tsx` file. By default, it is also hosted by the internal Premiere Pro server at `http://localhost:8081/api-docs/`. It is highly recommended to annotate your functions to simplify their usage (also, by you :)).
+
+On Windows 10 and later, you can easily trigger the URLs using the `curl`-functionality. [AutoHotkey](https://autohotkey.com/) code wrapping the `curl` process would look like this:
 
 ```
 F11::
@@ -81,7 +85,7 @@ F11::
 	return
 ```
 
-Quite easy, isn't it? Of course, you can change the port on your localhost. Have a look at the `index.html`- file for this.
+Quite easy, isn't it? Of course, you can change the port on your localhost. Have a look at the `index.html`- file for this. Also, Authotkey is only one example on how your custom Premiere Pro functionality can be called. Any application that can execute HTTP-requests is capable of triggering your functions.
 
 ## Development Workflow
 
