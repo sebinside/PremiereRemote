@@ -43,7 +43,8 @@ This short guide will show how to install and use the **PremiereRemote** framewo
 
      1. Open a console window in the `PremiereRemote\client` folder. Execute `npm i` to install all dependencies. These dependencies are used to run the local web server inside of Premiere. 
      2. Open a console window in the `PremiereRemote\host` folder. Execute `npm i` to install all dependencies. These dependencies are used for the development workflow.
-     3. In the same console window in the `PremiereRemote\host` folder, execute `npm run build`. This should generate a folder called `build`, where your custom functionality is contained.
+     3. In the same console window in the `PremiereRemote\host` folder, execute `npm i typescript`. This dependency is needed for compilating typescript code.
+     4. In the same console window in the `PremiereRemote\host` folder, execute `npm run build`. This should generate a folder called `build`, where your custom functionality is contained.
 
 4. (Re) start Adobe Premiere Pro.
 
