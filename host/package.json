@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "esbuild": "^0.14.36"
+    "esbuild": "^0.14.36",
+    "typescript": "^5.3.3"
   }
 }
