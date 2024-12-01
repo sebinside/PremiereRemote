@@ -29,6 +29,29 @@ export const host = {
    */
   yourNewFunction: function (param1, param2) {
     alert(param1 + " " + param2);
+  },
+
+  zoom: function(value: string) {
+    const clipInfo = this.getFirstSelectedClip(true)
+    const scaleInfo = clipInfo.clip.components[1].properties[1];
+    scaleInfo.setValue(scaleInfo.getValue() + parseInt(value), true);
+  },
+
+  getFirstSelectedClip: function(videoClip: Boolean) {
+    const currentSequence = app.project.activeSequence;
+    const tracks = videoClip ? currentSequence.videoTracks : currentSequence.audioTracks;
+    for (let i = 0; i < tracks.numTracks; i++) {
+      for (let j = 0; j < tracks[i].clips.numItems; j++) {
+          const currentClip = tracks[i].clips[j];
+          if(currentClip.isSelected()) {
+            return { clip: currentClip,
+              trackIndex: i,
+              clipIndex: j
+            }
+          }
+      }
+    }
+    return null;
   }
 };
 
@@ -40,3 +63,4 @@ export const framework = {
     app.enableQE();
   }
 };
+

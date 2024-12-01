@@ -7,6 +7,7 @@ const dir = decodeURI(loc.substring(1, loc.lastIndexOf('/')));
 const express = require(dir + "/node_modules/express/index.js");
 const swaggerJsDoc = require(dir + "/node_modules/swagger-jsdoc/index.js");
 const swaggerUi = require(dir + "/node_modules/swagger-ui-express/index.js");
+const websocket = require(dir + "/node_modules/ws/index.js");
 
 function init() {
     console.log("Starting PremiereRemote initialization...");
@@ -74,6 +75,10 @@ function init() {
     }
     console.log("Finished API endpoint setup.")
 
+    console.log("Starting WebSocket server setup...");
+    setupWebSocketServer();
+    console.log("Finished WebSocket server setup.");
+
     // Start server
     console.log(`Starting the PremiereRemote server now on port ${SERVER_PORT}.`);
     app.use('/', router);
@@ -89,6 +94,25 @@ function init() {
     document.getElementById("statusContainer").className = "green";
 
     console.log("Finished PremiereRemote initialization.")
+}
+
+function setupWebSocketServer() {
+    console.log(`Starting the PremiereRemote websocket server now on port ${WS_SERVER_PORT}.`);
+    const wss = new websocket.WebSocketServer({ port: WS_SERVER_PORT });
+
+    wss.on('connection', function connection(ws) {
+      ws.on('error', console.error);
+    
+      ws.on('message', function message(data) {
+        const parts = String(data).split(",");
+        if(parts.length !== 2) {
+            console.error("Invalid websocket message format. Expected: 'command,value'");
+        } else {
+            document.getElementById("lastCommandContainer").innerHTML = `ws:${parts[0]}(${parts[1]})`;
+            csInterface.evalScript(`host.${parts[0]}(${parts[1]});`);
+        }
+      });
+    });
 }
 
 function setupSwagger(swaggerApp) {
@@ -135,7 +159,9 @@ function executeCommand(command, params, res) {
 
     console.log(`Execute command: "${command}"`);
     csInterface.evalScript("host." + command, function (functionResult) {
-        res.json({ message: 'ok.', result: functionResult });
+        if(res) {
+            res.json({ message: 'ok.', result: functionResult });
+        }
     });
 }
 
