@@ -2,9 +2,9 @@
 
 ![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
 ![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
-[![Custom](https://img.shields.io/badge/Custom%20Functionality-Available-green)](https://github.com/sebinside/PremiereRemote/tree/custom)
+[![Custom](https://img.shields.io/badge/Custom%20Functionality-Available-green)](https://github.com/sebinside/PremiereRemote/tree/custom/host/src)
 
-Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request.
+Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request or using websockets.
 
 Let's take a custom function like locking a video track inside of Premiere Pro. Unfortunately, there are no shortcuts available without modification. With CEP, you can define your own javascript function using extendscript:
 
@@ -19,7 +19,7 @@ function lockVideoLayer(layerNumber) {
 
 Using **PremiereRemote**, you can now easily trigger this function from outside of Premiere Pro with a http request. The required endpoint is generated automaticaly. In the case of the default port `8081` and the function `lockVideoLayer` presented above: 
 
-```
+```bash
 $ curl "http://localhost:8081/lockVideoLayer?layerNumber=3"
 ```
 
@@ -51,7 +51,7 @@ This short guide will show how to install and use the **PremiereRemote** framewo
 
 4. Double click the extension window. This should open the plugins `host`- folder. Inside the folder `src`, you can add your own functionality, e.g., in the `index.tsx`. Please stick to the format already used to ensure correct parsing and server setup from the framework-side. A semi-minimal `index.tsx`-file looks like this:
 
-   ```
+   ```js
    export const host = {
        kill: function () {
            // This method is only there for debugging purposes and shall not be replaced.
@@ -64,12 +64,17 @@ This short guide will show how to install and use the **PremiereRemote** framewo
    
    After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. You also have to close and repoen the **PremiereRemote** extension via `Window` -> `Extensions`. Note, that a restart of Premiere Pro is usually not required.
    
-   There is more custom functionality available as inspiration or to directly use [here](https://github.com/sebinside/PremiereRemote/tree/custom).
+   There is more custom functionality available as inspiration or to directly use [here](https://github.com/sebinside/PremiereRemote/tree/custom/host/src).
 
 
 ## Usage
 
-Now, you are ready to call your own Premiere CEP functions, defined in the `host` variable of the `index.tsx`-file remotely. Test the endpoints in the browser of your choice, as shown above. For example, use Chrome and the url:
+Now, you are ready to call your own Premiere CEP functions, defined in the `host` variable of the `index.tsx`-file remotely. 
+There are two ways to trigger PremiereRemote functionality from outside: Using HTTP requests or using WebSocket calls.
+
+### HTTP Requests
+
+Test the endpoints in the browser of your choice, as shown above. For example, use Chrome and the url:
 
 ```
 http://localhost:8081/yourNewFunction?param1=Hello&param2=World
@@ -79,7 +84,7 @@ There is support for a [Swagger](https://swagger.io/)-based user interface (UI) 
 
 On Windows 10 and later, you can easily trigger the URLs using the `curl`-functionality. [AutoHotkey](https://autohotkey.com/) code wrapping the `curl` process would look like this:
 
-```
+```autohotkey
 F11::
 	Run curl ""http://localhost:8081/yourNewFunction?param1=Hello&param2=World"",,hide
 	return
@@ -89,16 +94,32 @@ Quite easy, isn't it? Of course, you can change the port on your localhost. Have
 
 Additionally, it is possible to return values from inside of Premiere Pro, by returning their serialized representation at the end of a function inside the `index.tsx` file. An example JSON-based result can look like this:
 
-```
+```javascript
 {"message":"ok.","result":"5"}
 ```
+
+### WebSocket
+
+Since the release of `v2.1.0`, a WebSocket server was added to PremiereRemote.
+This enables you to trigger CEP code with minimal delay, e.g., when integrating PremiereRemote with Controller Hardware like the Elgato Stream Deck +.
+Any function that can be called via HTTP (see above) can also be called via WebSocket using port `8082` by default.
+See this simple example:
+
+```javascript
+import WebSocket from 'ws';
+const websocketAddress = 'ws://localhost:8082';
+const ws = new WebSocket(websocketAddress);
+ws.send(`yourNewFunction,Hello,World`);
+```
+
+This code snippet would connect to the WebSocket server and call a CEP function named `yourNewFunction` with the parameters `Hello` and `World`. Any number of parameters (including zero) are allowed.
 
 ## Development
 
 Here is my workflow for easy development and debugging of your own [CEP](https://github.com/Adobe-CEP)-based functionality:
 
 1. Start developing your new function using the [ExtendScript Debugger](https://marketplace.visualstudio.com/items?itemName=Adobe.extendscript-debug) extension for [Visual Studio Code](https://code.visualstudio.com/). Just specify Adobe Premiere as targed and you're ready to go with your own javascript CEP code.
-2. After finishing with the development and testing of your new function, copy & paste the code inside the `index.tsx`-file. Alternatively, you can use multiple files to organize your code, as demonstrated [here](https://github.com/sebinside/PremiereRemote/tree/custom).
+2. After finishing with the development and testing of your new function, copy & paste the code inside the `index.tsx`-file. Alternatively, you can use multiple files to organize your code, as demonstrated [here](https://github.com/sebinside/PremiereRemote/tree/custom/host/src).
 3. After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. 
 4. Then, reopen the **PremiereRemote** extension via `Window` -> `Extensions` and test it again, e.g., by using a browser, as shown above.
 5. Optional: This extension enables debugging by default. Using chrome web debugger, you can simply connect to `http://localhost:8004` (by default) and see the javascript console output in real time.
