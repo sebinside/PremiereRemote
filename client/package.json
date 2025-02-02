@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^4.21.2",
     "swagger-jsdoc": "^3.2.9",
     "swagger-ui-express": "^4.6.0",
     "ws": "^8.18.0"
