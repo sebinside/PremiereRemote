@@ -105,11 +105,14 @@ function setupWebSocketServer() {
     
       ws.on('message', function message(data) {
         const parts = String(data).split(",");
-        if(parts.length !== 2) {
-            console.error("Invalid websocket message format. Expected: 'command,value'");
+        if(parts.length < 1) {
+            console.error("Invalid websocket message format. Expected: '<command>' or '<command>,<comma-separated-values>'");
         } else {
-            document.getElementById("lastCommandContainer").innerHTML = `ws:${parts[0]}(${parts[1]})`;
-            csInterface.evalScript(`host.${parts[0]}(${parts[1]});`);
+            const command = parts[0];
+            const values = parts.slice(1).join(",");
+            document.getElementById("lastCommandContainer").innerHTML = 
+            `ws: ${command}`;
+            csInterface.evalScript(`host.${command}(${values});`);
         }
       });
     });

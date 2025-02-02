@@ -37,6 +37,12 @@ export const host = {
     scaleInfo.setValue(scaleInfo.getValue() + parseInt(value), true);
   },
 
+  setZoom100: function() {
+    const clipInfo = this.getFirstSelectedClip(true)
+    const scaleInfo = clipInfo.clip.components[1].properties[1];
+    scaleInfo.setValue(100.0, true);
+  },
+
   getFirstSelectedClip: function(videoClip: Boolean) {
     const currentSequence = app.project.activeSequence;
     const tracks = videoClip ? currentSequence.videoTracks : currentSequence.audioTracks;
