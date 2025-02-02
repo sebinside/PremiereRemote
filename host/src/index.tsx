@@ -160,6 +160,31 @@ export const host = {
 
   /**
    * @swagger
+   * /setZoom100:
+   *      get:
+   *          description: Sets the scale of the current clip to 100 percent.
+   */
+  setZoom100: function() {
+      Utils.setZoomOfCurrentClip(100);
+  },
+
+  /**
+   * @swagger
+   * /zoom?value={value}:
+   *      get:
+   *          description: Changes the zoom of the current selected clip by the specified value.
+   *          parameters:
+   *              - name: value
+   *                description: value change in percent
+   *                in: path
+   *                type: number
+   */
+  zoom: function(value: string) {
+    Utils.changeZoom(value);
+  },
+
+  /**
+   * @swagger
    * /targetDefaultTracks:
    *      get:
    *          description: Targets the default tracks (video 1-3, audio 1).

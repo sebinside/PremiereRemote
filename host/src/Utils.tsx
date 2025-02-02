@@ -28,6 +28,12 @@ export class Utils {
       const scaleInfo = clipInfo.clip.components[1].properties[1];
       scaleInfo.setValue(zoomLevel, true);
     }
+    
+    static changeZoom(value: string) {
+      const clipInfo = Utils.getFirstSelectedClip(true)
+      const scaleInfo = clipInfo.clip.components[1].properties[1];
+      scaleInfo.setValue(scaleInfo.getValue() + parseInt(value), true);
+    }
   
     static zoomToFit(videoClip) {
       if(videoClip != null) {

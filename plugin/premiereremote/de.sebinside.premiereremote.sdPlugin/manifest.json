@@ -1,0 +1,50 @@
+{
+	"Name": "PremiereRemote",
+	"Version": "0.1.0.0",
+	"Author": "sebinside",
+	"Actions": [
+		{
+            "Icon": "imgs/arrowsmaximize-modern-duotone",
+            "Name": "Zoom",
+            "Controllers": ["Encoder"],
+            "Encoder": {
+                "layout": "$X1",
+				"TriggerDescription": {
+					"Rotate": "Zoom",
+					"Push": "Reset zoom to 100"
+				}
+            },
+            "States": [
+                {
+                    "Image": "imgs/arrowsmaximize-modern-duotone",
+					"TitleAlignment": "middle",
+					"Title": "Zoom"
+                }
+            ],
+            "UUID": "de.sebinside.premiereremote.zoom"
+        }
+	],
+	"Category": "PremiereRemote",
+	"CategoryIcon": "imgs/camcorder-modern-duotone",
+	"CodePath": "bin/plugin.js",
+	"Description": "PremiereRemote Stream Deck Companion Plugin",
+	"SDKVersion": 2,
+	"Software": {
+		"MinimumVersion": "6.4"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "10.15"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "20",
+		"Debug": "--inspect=127.0.0.1:44444"
+	},
+	"UUID": "de.sebinside.premiereremote"
+}
