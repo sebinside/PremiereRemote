@@ -4,7 +4,7 @@
 ![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
 [![Custom](https://img.shields.io/badge/Custom%20Functionality-Available-green)](https://github.com/sebinside/PremiereRemote/tree/custom/host/src)
 
-Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request.
+Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request or using websockets.
 
 Let's take a custom function like locking a video track inside of Premiere Pro. Unfortunately, there are no shortcuts available without modification. With CEP, you can define your own javascript function using extendscript:
 
@@ -69,7 +69,12 @@ This short guide will show how to install and use the **PremiereRemote** framewo
 
 ## Usage
 
-Now, you are ready to call your own Premiere CEP functions, defined in the `host` variable of the `index.tsx`-file remotely. Test the endpoints in the browser of your choice, as shown above. For example, use Chrome and the url:
+Now, you are ready to call your own Premiere CEP functions, defined in the `host` variable of the `index.tsx`-file remotely. 
+There are two ways to trigger PremiereRemote functionality from outside: Using HTTP requests or using WebSocket calls.
+
+### HTTP Requests
+
+Test the endpoints in the browser of your choice, as shown above. For example, use Chrome and the url:
 
 ```
 http://localhost:8081/yourNewFunction?param1=Hello&param2=World
@@ -92,6 +97,22 @@ Additionally, it is possible to return values from inside of Premiere Pro, by re
 ```javascript
 {"message":"ok.","result":"5"}
 ```
+
+### WebSocket
+
+Since the release of `v2.1.0`, a WebSocket server was added to PremiereRemote.
+This enables you to trigger CEP code with minimal delay, e.g., when integrating PremiereRemote with Controller Hardware like the Elgato Stream Deck +.
+Any function that can be called via HTTP (see above) can also be called via WebSocket using port `8082` by default.
+See this simple example:
+
+```javascript
+import WebSocket from 'ws';
+const websocketAddress = 'ws://localhost:8082';
+const ws = new WebSocket(websocketAddress);
+ws.send(`yourNewFunction,Hello,World`);
+```
+
+This code snippet would connect to the WebSocket server and call a CEP function named `yourNewFunction` with the parameters `Hello` and `World`. Any number of parameters (including zero) are allowed.
 
 ## Development
 
