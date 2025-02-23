@@ -185,6 +185,61 @@ export const host = {
 
   /**
    * @swagger
+   * /setRotate0:
+   *      get:
+   *          description: Sets the rotation of the current clip to 0.
+   */
+  setRotate0: function() {
+    Utils.setRotationOfCurrentClip(0);
+  },
+
+  /**
+   * @swagger
+   * /rotate?value={value}:
+   *      get:
+   *          description: Changes the rotation of the current selected clip by the specified value.
+   *          parameters:
+   *              - name: value
+   *                description: value change in degree (is divided by 2)
+   *                in: path
+   *                type: number
+   */
+  rotate: function(value: string) {
+    Utils.changeRotation(value);
+  },
+
+  /**
+   * @swagger
+   * /xmove?value={value}:
+   *      get:
+   *          description: Changes the x position of the current selected clip by the specified value.
+   *          parameters:
+   *              - name: value
+   *                description: value change in pixels (modified by internal modifier)
+   *                in: path
+   *                type: number
+   */
+  xmove: function(value: string) {
+    Utils.changePosition(value, "0", 5);
+  },
+
+  /**
+   * @swagger
+   * /ymove?value={value}:
+   *      get:
+   *          description: Changes the y position of the current selected clip by the specified value.
+   *          parameters:
+   *              - name: value
+   *                description: value change in pixels (modified by internal modifier)
+   *                in: path
+   *                type: number
+   */
+  ymove: function(value: string) {
+    Utils.changePosition("0", value, 5);
+  },
+
+  /**
+   * @swagger
    * /targetDefaultTracks:
    *      get:
    *          description: Targets the default tracks (video 1-3, audio 1).

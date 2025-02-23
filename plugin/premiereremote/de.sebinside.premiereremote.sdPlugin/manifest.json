@@ -22,6 +22,64 @@
                 }
             ],
             "UUID": "de.sebinside.premiereremote.zoom"
+        },
+		{
+            "Icon": "imgs/arrowsrotatereverse-modern-sharp-duotone-thin",
+            "Name": "Rotate",
+            "Controllers": ["Encoder"],
+            "Encoder": {
+                "layout": "$X1",
+				"TriggerDescription": {
+					"Rotate": "Rotate",
+					"Push": "Reset rotation to 0"
+				}
+            },
+            "States": [
+                {
+                    "Image": "imgs/arrowsrotatereverse-modern-sharp-duotone-thin",
+					"TitleAlignment": "middle",
+					"Title": "Rotate"
+                }
+            ],
+            "UUID": "de.sebinside.premiereremote.rotate"
+        },
+		{
+            "Icon": "imgs/arrowsleftright-modern-sharp-duotone-thin",
+            "Name": "MoveX",
+            "Controllers": ["Encoder"],
+            "Encoder": {
+                "layout": "$X1",
+				"TriggerDescription": {
+					"Rotate": "MoveX"
+				}
+            },
+            "States": [
+                {
+                    "Image": "imgs/arrowsleftright-modern-sharp-duotone-thin",
+					"TitleAlignment": "middle",
+					"Title": "MoveX"
+                }
+            ],
+            "UUID": "de.sebinside.premiereremote.xmove"
+        },
+		{
+            "Icon": "imgs/arrowsfromline-modern-sharp-duotone-thin",
+            "Name": "MoveY",
+            "Controllers": ["Encoder"],
+            "Encoder": {
+                "layout": "$X1",
+				"TriggerDescription": {
+					"Rotate": "MoveY"
+				}
+            },
+            "States": [
+                {
+                    "Image": "imgs/arrowsfromline-modern-sharp-duotone-thin",
+					"TitleAlignment": "middle",
+					"Title": "MoveY"
+                }
+            ],
+            "UUID": "de.sebinside.premiereremote.ymove"
         }
 	],
 	"Category": "PremiereRemote",

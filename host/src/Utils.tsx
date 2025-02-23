@@ -34,6 +34,29 @@ export class Utils {
       const scaleInfo = clipInfo.clip.components[1].properties[1];
       scaleInfo.setValue(scaleInfo.getValue() + parseInt(value), true);
     }
+
+    static setRotationOfCurrentClip(rotation: number) {
+      const clipInfo = Utils.getFirstSelectedClip(true)
+      const rotationInfo = clipInfo.clip.components[1].properties[4];
+      rotationInfo.setValue(rotation, true);
+    }
+
+    static changeRotation(value: string) {
+      const clipInfo = Utils.getFirstSelectedClip(true)
+      const rotationInfo = clipInfo.clip.components[1].properties[4];
+      rotationInfo.setValue(rotationInfo.getValue() + parseInt(value)/2, true);
+    }
+
+    static changePosition(x: string, y: string, modifier: number = 1) {
+      const clipInfo = Utils.getFirstSelectedClip(true)
+      const positionInfo = clipInfo.clip.components[1].properties[0];
+      const frameHeight = app.project.activeSequence.frameSizeVertical;
+      const frameWidth = app.project.activeSequence.frameSizeHorizontal;
+
+      let positionX = positionInfo.getValue()[0] + (parseInt(x) / frameWidth) * modifier;
+      let positionY = positionInfo.getValue()[1] + (parseInt(y) / frameHeight) * modifier;
+      positionInfo.setValue([positionX, positionY], true);
+    }
   
     static zoomToFit(videoClip) {
       if(videoClip != null) {
