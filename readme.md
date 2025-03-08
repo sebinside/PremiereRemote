@@ -1,4 +1,10 @@
-# PremiereRemote - Customizable remote access to Adobe Premiere Pro CEP.
+<p align="center">
+  <h3 align="center"><a href="https://github.com/sebinside/PremiereRemote/releases"><img src = "premiereremote-logo.png"/></a><br>
+  <a href="https://github.com/sebinside/PremiereRemote/releases">🔗 Download Release</a></h3>
+</p>
+<p>&nbsp;</p>
+
+## PremiereRemote - Customizable remote access to Adobe Premiere Pro CEP
 
 ![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
 ![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
