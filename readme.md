@@ -6,8 +6,8 @@
 
 ## PremiereRemote - Customizable remote access to Adobe Premiere Pro CEP
 
-![CEP Version](https://img.shields.io/badge/CEP%20Version-11.0-yellow) 
-![Premiere Version](https://img.shields.io/badge/Premiere%20Version-2021-orange)
+![CEP Version](https://img.shields.io/badge/CEP%20Version-12.0-yellow) 
+![Premiere Version](https://img.shields.io/badge/Premiere%20Version-25.2-orange)
 [![Custom](https://img.shields.io/badge/Custom%20Functionality-Available-green)](https://github.com/sebinside/PremiereRemote/tree/custom/host/src)
 
 Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request or using websockets.
@@ -40,10 +40,10 @@ This short guide will show how to install and use the **PremiereRemote** framewo
 
 1. Start by cloning or downloading this repository. There is a [ready-to-use-version](https://github.com/sebinside/PremiereRemote/releases) available.
 
-2. Follow [this documentation](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md) to install the extension. Basicaly, you have to:
+2. Follow [this documentation](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_12.x/Documentation/CEP%2012%20HTML%20Extension%20Cookbook.md) to install the extension. Basically, you have to:
 
-     1. Use `regedit` to allow the execution of unsigned Adobe Premiere extensions as described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md#debugging-unsigned-extensions).
-     2. Copy the downloaded code inside of an extension folder, described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md#extension-folders), e.g., `C:\Users\<USERNAME>\AppData\Roaming\Adobe\CEP\extensions\PremiereRemote`.
+     1. Use `regedit` to allow the execution of unsigned Adobe Premiere extensions as described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_12.x/Documentation/CEP%2012%20HTML%20Extension%20Cookbook.md#debugging-unsigned-extensions).
+     2. Copy the downloaded code inside of an extension folder, described [here](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_12.x/Documentation/CEP%2012%20HTML%20Extension%20Cookbook.md#extension-folders), e.g., `C:\Users\<USERNAME>\AppData\Roaming\Adobe\CEP\extensions\PremiereRemote`.
      
 3. Install the required dependencies to use **PremiereRemote**. 
 
@@ -128,7 +128,7 @@ Here is my workflow for easy development and debugging of your own [CEP](https:/
 2. After finishing with the development and testing of your new function, copy & paste the code inside the `index.tsx`-file. Alternatively, you can use multiple files to organize your code, as demonstrated [here](https://github.com/sebinside/PremiereRemote/tree/custom/host/src).
 3. After making changes in any `.tsx` files, repeat the process of running `npm run build` from inside the `PremiereRemote\host` folder. 
 4. Then, reopen the **PremiereRemote** extension via `Window` -> `Extensions` and test it again, e.g., by using a browser, as shown above.
-5. Optional: This extension enables debugging by default. Using chrome web debugger, you can simply connect to `http://localhost:8004` (by default) and see the javascript console output in real time.
+5. Optional: This extension enables debugging by default. Using chrome web debugger, you can simply connect to `http://localhost:8708` (by default) and see the javascript console output in real time (see the `.debug` file).
 
 Custom functionality inside the `host` folder is written in TypeScript and is based on [Types-for-Adobe](https://github.com/pravdomil/Types-for-Adobe).
 
@@ -137,7 +137,7 @@ Custom functionality inside the `host` folder is written in TypeScript and is ba
 If you want learn more about using the Adobe CEP SDK or AutoHotkey, have a look at this:
 
 * Adobe CEP Premiere Samples: https://github.com/Adobe-CEP/Samples/blob/master/PProPanel/jsx/PPRO/Premiere.jsx
-* Premiere On Script, a Premiere CEP youtube channel: https://www.youtube.com/channel/UCmq_t_-4GLFu_nYaEDDModw
+* Premiere On Script, a Premiere CEP YouTube channel: https://www.youtube.com/channel/UCmq_t_-4GLFu_nYaEDDModw
 * Taran Van Hemert, a macro specialist: https://www.youtube.com/user/TaranVH
 * And my own twitch channel, were I develop with these techniques, sometimes: https://www.twitch.tv/skate702
 

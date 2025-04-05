@@ -2,14 +2,17 @@
  <ExtensionList>
         <Extension Id="de.sebinside.premiereremote.panel">
            <HostList>
-            <Host Name="PHXS" Port="8000"/>
-            <Host Name="IDSN" Port="8001"/>
-            <Host Name="AICY" Port="8002"/>
-            <Host Name="ILST" Port="8003"/>
-            <Host Name="PPRO" Port="8004"/>
-            <Host Name="PRLD" Port="8005"/>
-            <Host Name="FLPR" Port="8006"/>
-			<Host Name="AUDT" Port="8007"/>
+            <Host Name="DRWV" Port="8701"/>
+            <Host Name="FLPR" Port="8702"/>
+            <Host Name="IDSN" Port="8703"/>
+            <Host Name="AICY" Port="8704"/>
+            <Host Name="ILST" Port="8705"/>
+            <Host Name="PHSP" Port="8706"/>
+            <Host Name="PHXS" Port="8707"/>
+            <Host Name="PPRO" Port="8708"/>
+            <Host Name="PRLD" Port="8709"/>
+            <Host Name="AEFT" Port="8710"/>
+            <Host Name="DEMO" Port="8711"/>
         </HostList>
         </Extension>
     </ExtensionList>    
