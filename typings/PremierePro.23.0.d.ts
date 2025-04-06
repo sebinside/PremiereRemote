@@ -90,8 +90,45 @@ declare class SequenceSettings {
 	vrProjection:				number
 	vrVertCapturedView:			number
 	workingColorSpaceList:		Array
-	workingColorSpace:			String
+	workingColorSpace:			colorSpace
 }
+
+/**
+ * Structure describing audio channel mapping for a projectItem.
+ */
+declare class AudioChannelMapping {
+	audioClipsNumber: 	number
+	audioChannelsType:	number
+	setMappingForChannel(number:channelIndex, number:sourceChannelIndex): function
+}
+
+  declare class colorSpace {
+	/**
+	 * 
+	 */
+	name: String
+
+	/**
+	 * 
+	 */
+	transferCharacteristic: String
+
+	/**
+	 * 
+	 */
+	matrixEquation: String
+
+	/**
+	 * 
+	 */
+	primaries: String
+
+	/**
+	 * 
+	 */
+
+
+  }
 
 /**
  * A sequence.
@@ -141,7 +178,7 @@ declare class Sequence {
 	/**
 	 * The color space in use by the sequence
 	 */
-	workingColorSpace: string
+	workingColorSpace: colorSpace
   
 	/**
 	 * Name (writable).
@@ -272,7 +309,7 @@ declare class Sequence {
   
 	/**
 	 * Sets the current player position.
-	 * @param pos The new position, as a timecode string.
+	 * @param pos The new position, as a string, representing ticks.
 	 */
 	setPlayerPosition(pos: string): void
   
@@ -374,7 +411,7 @@ declare class Sequence {
 	/**
 	 * @returns currently-selected clips, as an `Array` of `trackItems`
 	 */
-	getSelection(): Array
+	getSelection(): Array <TrackItem>
 
 	/**
 	 * Returns the current sequence settings.
@@ -387,6 +424,12 @@ declare class Sequence {
 	 * @param newSettings New settings
 	 */	
 	setSettings(newSettings): void
+
+	/**
+	 *  @returns true if effect analysis is complete
+	 */
+	
+	isDoneAnalyzingForVideoEffects(): Boolean
 
 
 	/**
@@ -401,6 +444,13 @@ declare class Sequence {
 
 	autoReframeSequence(numerator:Number, denominator:Number, motionPreset:String, sequenceName:String, nest:Boolean): Sequence
 
+	/**
+	 * 
+	 * @param action Either 'ApplyCuts' or 'CreateMarkers' 
+	 * @param applyCutsToLinkedAudio Operate on linked audio too?
+	 * @param sensitivity 'LowSensitivity', 'MediumSensitivity', or 'HighSensitivity'
+	 */
+	performCutDetectionOnSelection(action:String, applyCutsToLinkedAudio:Boolean, sensitivity:String)
 	/**
 	 *
 	 */
@@ -653,7 +703,7 @@ declare class ProjectManager {
 	isProductionOpen(): boolean
   
 	/**
-	 *
+	 * @returns An array of open productions (), or null if no productions are open.
 	 */
 	listProductions(): RemoteProductionCollection
   
@@ -839,6 +889,7 @@ declare class ProjectManager {
 	unbind(eventName: string): void
   }
   
+
   /**
    *
    */
@@ -884,9 +935,10 @@ declare class ProjectManager {
 	bind(eventName: string, function_: any): void
   
 	/**
-	 *
+	 * @param saveBeforeClosing: boolean, indicating whether to save the project before closing
+	 * @param promptUserIfDirty: boolean, indicating whether to prompt the user to save before closing
 	 */
-	closeDocument(): boolean
+	closeDocument(saveBeforeClosing?: boolean, promptUserIfDirty?: boolean): boolean
   
 	/**
 	 *
@@ -968,7 +1020,7 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	importAllAEComps(arg1: any, compsToImport: Array,  projectBin: ProjectItem): boolean
+	importAllAEComps(aepPath: String,  projectBin: ProjectItem): boolean
   
 	/**
 	 * Imports files into the project. 
@@ -1015,7 +1067,32 @@ declare class ProjectManager {
 	 *
 	 */
 	setProjectPanelMetadata(newMetadata: string): void
-  
+
+	/**
+	 * 
+	 * @param newSequenceName 	Name for newly-created sequence
+	 * @param projectItems 		Array of project items to be added to sequence
+	 * @param targetBin 		Bin in which new sequence should be created
+	 */
+	
+	createNewSequenceFromClips(newSequenceName: string, projectItems: Array, targetBin: ProjectItem)
+
+	/**
+	 * 
+	 */
+	getSupportedGraphicsWhiteLuminances(): Array
+
+	/**
+	 * 
+	 */
+	getGraphicsWhiteLuminance(): number
+
+	/**
+	 * 
+	 * @param newGWL  
+	 */
+	setGraphicsWhiteLuminance(newGWL:number): boolean
+	
 	/**
 	 *
 	 */
@@ -1124,7 +1201,12 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	readonly inPoint: Time
+	inPoint: Time
+
+	/**
+	 * 
+	 */
+	outPoint: Time
   
 	/**
 	 *
@@ -1139,13 +1221,12 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	readonly outPoint: Time
-  
-	/**
-	 *
-	 */
 	projectItem: ProjectItem
-  
+
+	/**
+	 * 
+	 */
+	disabled: boolean
 	/**
 	 *
 	 */
@@ -1155,7 +1236,12 @@ declare class ProjectManager {
 	 *
 	 */
 	readonly type: number
-  
+
+	/**
+	 * 
+	 */
+	readonly nodeId: string 
+
 	/**
 	 *
 	 */
@@ -1195,6 +1281,12 @@ declare class ProjectManager {
 	 *
 	 */
 	getSpeed(): number
+
+	/**
+	 * 	Returns whether the trackItem represents a MOGRT.
+  	 *	@returns true, if trackItem is a MOGRT. 
+	*/
+	isMGT(): boolean
 
 	/**
 	 *
@@ -1250,11 +1342,26 @@ declare class ProjectManager {
 	 *
 	 */
 	readonly videoComponents: any
+
+	/**
+	 * Timebase in ticks after frame rate interpretation has been applied
+	 */
+	readonly interpretedTimebase: string
+
+	/**
+	 * Timebase in ticks of source media without frame rate interpretation
+	 */
+	readonly sourceTimebase: string
   
 	/**
 	 *
 	 */
 	attachProxy(mediaPath: string, isHiRes: number): boolean
+
+	/**
+	 * 
+	 */
+	detachProxy(): boolean
   
 	/**
 	 *
@@ -1288,7 +1395,7 @@ declare class ProjectManager {
 
 	/**
   	 * 	Returns whether the projectItem represents a sequence.
-  	 	@returns true, if projectItem is a sequence.
+  	 *	@returns true, if projectItem is a sequence.
   	*/
   	isSequence(): boolean
   
@@ -1415,16 +1522,81 @@ declare class ProjectManager {
 	startTime(): Time
 
 	/**
+	 * @returns The original color space associated with the unmodified Item
+	 */
+	
+	getOriginalColorSpace() : colorSpace
+
+
+	/**
 	 * 
 	 * @param newColorSpace value must be available via sequence.workingColorSpaceList 
 	 */
-	setOverrideColorSpace(newColorSpace: String): void
+	setOverrideColorSpace(newColorSpace: colorSpace): void
+
+	/**
+	 * @returns the color space currently in use
+	 */
+	getColorSpace(): colorSpace
 
 	/**
 	 * 
 	 */
-	getColorSpace(): String
+	isMulticamClip(): boolean
+
+	/**
+	 * 
+	 */
+	isMergedClip(): boolean
+
+	/**
+	 * 
+	 * @returns boolean indicating whether projectItem is offline.
+	 */
+	isOffline(): boolean
+
+	/**
+	 * 
+	 * @returns a boolean indicating whether setting the projectItem offline was successful.
+	 */
+	setOffline(): boolean
+
+	/**
+	 * 
+	 * @returns a footageInterpretation object, or null if none was available.
+	 */
+	getFootageInterpretation(): FootageInterpretation
+
+	/**
+	 * 
+	 * @param FootageInterpretation object containing desired settings
+	 * @returns a boolean indicating whether setting the interpretation was successful.
+	 */
+	setFootageInterpretation(FootageInterpretation): boolean
+
+	/**
+	 * 
+	 * @returns an audio channel mapping object, or null if none was available.
+	 */
+	getAudioChannelMapping: AudioChannelMapping
+
+	/**
+	 * 
+	 * @param AudioChannelMapping object describing desired audio channel mapping. 
+	 * @returns boolean indicating whether setting the audio channel mapping was successful.
+	 */
+	setAudioChannelMapping(mapping:AudioChannelMapping): boolean
 	
+	/**
+	 * @returns the LUT embedded with the original media
+	 */
+	getEmbeddedLUTID(): number
+	
+	/**
+	 * @returns the LUT currently associated with the media
+	 */
+
+	getInputLUTID(): number
 	/**
 	 *
 	 */
@@ -1743,10 +1915,11 @@ declare class ProjectManager {
 	  presetPath: string,
 	  WorkAreaType?: number,
 	  removeOnCompletion?: number,
+	  startQueueImmediately?: boolean,
 	): string
 
 	/**
-	 *
+	 * @returns an array of available exporters, or null if no exporters are available.
 	 */
 	getExporters(): Array
 	/**
@@ -1773,6 +1946,11 @@ declare class ProjectManager {
 	 *
 	 */
 	startBatch(): boolean
+
+	/**
+	 * 
+	 */
+	lastExportMediaFolder():String
   
 	/**
 	 *
@@ -1790,7 +1968,7 @@ declare class ProjectManager {
 	bind(eventName: string, function_: any): void
   
 	/**
-	 *
+	 * @param propertyKey Indicates which property to clear.
 	 */
 	clearProperty(propertyKey: string): void
   
@@ -1802,7 +1980,7 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	getProperty(propertyKey: string): void
+	getProperty(propertyKey: string): any
   
 	/**
 	 *
@@ -1812,7 +1990,7 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	setProperty(propertyKey: string, propertyValue: string, permanenceValue: number, allowCreateNewProperty: boolean): void
+	setProperty(propertyKey: string, propertyValue: any, permanenceValue: number, allowCreateNewProperty: boolean): void
   
 	/**
 	 *
@@ -1824,7 +2002,41 @@ declare class ProjectManager {
 	 */
 	unbind(eventName: string): void
   }
-  
+  /**
+   * 
+   */
+  declare class PrProduction {
+	  /**
+	   * 
+	   */
+	  name: string
+
+	  /**
+	   * 
+	   */
+	  projects: Array <Project>
+
+	  /**
+	   * 
+	   */
+	  close(): void
+
+	  /**
+	   * 
+	   */
+	  getLocked(project:Project): Boolean
+
+	  /**
+	   * 
+	   */
+	  setLocked(project:Project, newLockState: Boolean): void
+
+	  /**
+	   * 
+	   */
+	  moveToTrash(projectPath:String, suppressUI:Boolean, saveProject:Boolean): Boolean
+	  
+  }
   /**
    *
    */
@@ -1940,11 +2152,11 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	openDocument(filePath: string, bypassConversionDialog: boolean, bypassLocateFile: boolean, hideFromMRUList: boolean): boolean
+	openDocument(filePath: string, bypassConversionDialog?: boolean, bypassLocateFile?: boolean, bypassWarningDialog?: boolean, hideFromMRUList?: boolean): boolean
 
 	/**
 	 * @param newValueForTranscodeOnIngest
-	 * @returns the newly-set state for whether or not PPro transcodes files upon ingest.
+	 * @returns Boolean indicating whether transcode on ingest is enabled.
 	 */
 	setEnableTranscodeOnIngest(newValueForTranscodeOnIngest: boolean)
   
@@ -2001,7 +2213,12 @@ declare class ProjectManager {
 	/**
 	 *
 	 */
-	getProjectViewSelection(viewID:String): Array
+	getProjectViewSelection(viewID:String): Array <ProjectItem>
+
+	/**
+	*
+	*/
+	getCurrentProjectViewSelection(viewID:String): Array <ProjectItem>
 
 	/**
 	 *
@@ -2017,7 +2234,7 @@ declare class ProjectManager {
 	/**
 	 * @returns an array of the names of all available workspaces.
 	 */
-	getWorkspaces(): Array
+	getWorkspaces(): Array <string>
 
 	/**
 	 * @param workspaceName Name of workspace to use
@@ -2046,6 +2263,22 @@ declare class ProjectManager {
 	 *
 	 */
 	enableQE(): void
+
+	/**
+	 * 
+	 */
+	newProject(projectName: string): boolean
+
+	/**
+	 * 
+	 */
+	production: PrProduction
+
+	/**
+	 * 
+	 */
+	openPrProduction(path:string): PrProduction
+
   }
   
   /**
