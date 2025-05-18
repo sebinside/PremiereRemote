@@ -250,6 +250,40 @@ export const host = {
 
   /**
    * @swagger
+   * /setLockedForAllTracks?locked={locked}:
+   *      get:
+   *          description: Locks or unlocks all tracks.
+   *          parameters:
+   *              - name: locked
+   *                description: true if all tracks shall be locked
+   *                in: path
+   *                type: boolean
+   */
+  setLockedForAllTracks: function(locked: string) {
+    Utils.setLockedForAllTracks(locked === "true");
+  },
+
+  /**
+   * @swagger
+   * /unlockTracks?videoTrack={videoTrack}&audioTrack={audioTrack}:
+   *      get:
+   *          description: Unlocks the specified tracks.
+   *          parameters:
+   *              - name: videoTrack
+   *                description: the single video track to unlock (starting at 1)
+   *                in: path
+   *                type: number
+   *              - name: audioTrack
+   *                description: the single audio track to unlock (starting at 1)
+   *                in: path
+   *                type: number
+   */
+  unlockTracks: function(videoTrack: string, audioTrack: string) {
+    Utils.unlockTracks(parseInt(videoTrack) - 1, parseInt(audioTrack) - 1);
+  },
+
+  /**
+   * @swagger
    * /targetTracks?videoTrack={videoTrack}&audioTrack={audioTrack}:
    *      get:
    *          description: Untargets all tracks. Then, only targets the specified tracks.

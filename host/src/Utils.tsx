@@ -96,6 +96,29 @@ export class Utils {
   
       }
     }
+
+    static setLockedForAllTracks(locked: boolean) {
+      const qeSequence = qe.project.getActiveSequence();
+      const currentSequence = app.project.activeSequence;
+      for(let i = 0; i < currentSequence.videoTracks.numTracks; i++) {
+        qeSequence.getVideoTrackAt(i).setLock(locked);
+      }
+      for(let i = 0; i < currentSequence.audioTracks.numTracks; i++) {
+        qeSequence.getAudioTrackAt(i).setLock(locked);
+      }
+    }
+
+    static unlockTracks(videoTrack: number, audioTrack: number) {
+      const qeSequence = qe.project.getActiveSequence();
+      const currentSequence = app.project.activeSequence;
+      
+      if(currentSequence.videoTracks.numTracks > videoTrack) {
+        qeSequence.getVideoTrackAt(videoTrack).setLock(false);
+      }
+      if(currentSequence.audioTracks.numTracks > audioTrack) {
+        qeSequence.getAudioTrackAt(audioTrack).setLock(false);
+      }
+    }
   
     static targetAllTracks(target: boolean) {
       const currentSequence = app.project.activeSequence;
