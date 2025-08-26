@@ -6,11 +6,15 @@
 
 ## PremiereRemote - Customizable remote access to Adobe Premiere Pro CEP
 
-![CEP Version](https://img.shields.io/badge/CEP%20Version-12.0-yellow) 
-![Premiere Version](https://img.shields.io/badge/Premiere%20Version-25.2-orange)
+[![CEP Version](https://img.shields.io/badge/CEP%20Version-12.0-yellow)](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_12.x/Documentation/CEP%2012%20HTML%20Extension%20Cookbook.md)
+[![Premiere Pro Version](https://img.shields.io/badge/Premiere%20Pro%20Version-25.2-orange)](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_12.x/Documentation/CEP%2012%20HTML%20Extension%20Cookbook.md)
 [![Custom](https://img.shields.io/badge/Custom%20Functionality-Available-green)](https://github.com/sebinside/PremiereRemote/tree/custom/host/src)
+[![Release](https://img.shields.io/github/v/release/sebinside/PremiereRemote)](https://github.com/sebinside/PremiereRemote/releases)
 
-Using the [Adobe Premiere Extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere CEP-based functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved with a server that is started inside of Premiere on your local machine. Any custom functionality can then be triggerd using a local http request or using websockets.
+Using the [CEP extension mechanism](https://github.com/Adobe-CEP), **PremiereRemote** provides a framework to trigger your own Premiere functionality from outside of Premiere, e.g., by using [AutoHotkey](https://autohotkey.com/). This is achieved by starting a local server inside of Premiere, allowing to trigger custom functionality using a local http request or with websockets. TL;DR:
+
+![Overview](figure-light.png#gh-light-mode-only)
+![Overview](figure-dark.png#gh-dark-mode-only)
 
 Let's take a custom function like locking a video track inside of Premiere Pro. Unfortunately, there are no shortcuts available without modification. With CEP, you can define your own javascript function using extendscript:
 
