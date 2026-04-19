@@ -233,7 +233,11 @@ function uxpResolveExpression(baseName: string, guidArg: string): string {
   if (baseName === "Project") {
     return `await premierepro.Project.getProject(premierepro.Guid.fromString(${guidArg}))`;
   }
-  return `registry.get(${guidArg}) as any`;
+  return `(() => {
+    const obj = registry.get(${guidArg});
+    if (obj === undefined) throw new Error(\`${baseName} not found in registry: \${${guidArg}}\`);
+    return obj;
+  })()`;
 }
 
 // ----------- Generate external WS dispatcher -----------
@@ -398,15 +402,6 @@ ${cases.join("\n")}
   }
 }
 `;
-}
-
-// buildArgExpr is kept for the external dispatcher GET methods (still needed for legacy param handling)
-function buildArgExpr(paramName: string, _typeName: string): string {
-  if (paramName === "body") return "args";
-  if (paramName.endsWith("Guid") || paramName === "guid") {
-    return `premierepro.Guid.fromString(String(args.${paramName}))`;
-  }
-  return `args.${paramName} as any`;
 }
 
 // ----------- entry point -----------
