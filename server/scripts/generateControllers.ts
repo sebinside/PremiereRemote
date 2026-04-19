@@ -288,14 +288,15 @@ function generateControllerSource(
       .map((p) => `@Query() ${p.name}: ${p.tsType}`)
       .join(", ");
 
+    const getterName = `get${prop.name.charAt(0).toUpperCase()}${prop.name.slice(1)}`;
     const body = `
   /**
    * Get property '${prop.name}' on ${typeName}.
    * ${prop.jsDoc}
    */
   @Get("${prop.name}")
-  public async get${prop.name.charAt(0).toUpperCase()}${prop.name.slice(1)}(${paramList}): Promise<${prop.tsType}> {
-    return (await uxpBridge.invoke("${typeName}.${prop.name}", { ${allParams.map((p) => p.name).join(", ")} })) as ${prop.tsType};
+  public async ${getterName}(${paramList}): Promise<${prop.tsType}> {
+    return (await uxpBridge.invoke("${typeName}.${getterName}", { ${allParams.map((p) => p.name).join(", ")} })) as ${prop.tsType};
   }`;
     methodSources.push(body);
   }

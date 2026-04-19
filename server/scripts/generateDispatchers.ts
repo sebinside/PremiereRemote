@@ -15,6 +15,7 @@ import {
   TypeAliasDeclaration,
   Node,
   PropertySignature,
+  MethodSignature,
   TypeElementTypes,
 } from "ts-morph";
 import * as path from "path";
@@ -48,6 +49,109 @@ function buildPremiereMappings(): Map<string, string> {
   }
 
   return mappings;
+}
+
+// ----------- Parse types.d.ts to get UXP method signatures and properties -----------
+
+interface UxpParam {
+  name: string;
+  uxpType: string; // original type text from types.d.ts
+}
+
+interface UxpTypeInfo {
+  /** key: "TypeName.methodName" → params */
+  methods: Map<string, UxpParam[]>;
+  /** set of "TypeName.propertyName" (original property names, case-exact) */
+  properties: Set<string>;
+}
+
+function buildUxpTypeInfo(): UxpTypeInfo {
+  const project = new TsMorphProject({ skipAddingFilesFromTsConfig: true });
+  project.addSourceFileAtPath(TYPES_DTS_PATH);
+  const sourceFile = project.getSourceFileOrThrow(TYPES_DTS_PATH);
+
+  const SKIP_METHODS = new Set(["()", "toString", "valueOf", "toLocaleString", "hasOwnProperty", "isPrototypeOf"]);
+
+  const methods = new Map<string, UxpParam[]>();
+  const properties = new Set<string>();
+
+  for (const typeAlias of sourceFile.getTypeAliases()) {
+    const typeName = typeAlias.getName();
+    const typeNode = typeAlias.getTypeNode();
+    if (!Node.isTypeLiteral(typeNode)) continue;
+
+    for (const member of typeNode.getMembers()) {
+      if (Node.isMethodSignature(member as TypeElementTypes)) {
+        const method = member as MethodSignature;
+        const methodName = method.getName();
+        if (SKIP_METHODS.has(methodName)) continue;
+        const params: UxpParam[] = method.getParameters().map((p) => ({
+          name: p.getName(),
+          uxpType: p.getType().getText(),
+        }));
+        methods.set(`${typeName}.${methodName}`, params);
+      } else if (Node.isPropertySignature(member as TypeElementTypes)) {
+        const prop = member as PropertySignature;
+        // Expose all readable properties (readonly or regular)
+        properties.add(`${typeName}.${prop.getName()}`);
+      }
+    }
+  }
+
+  return { methods, properties };
+}
+
+/**
+ * Given a controller methodName like getKEY_AUTO_PEAK_GENERATION or getName,
+ * returns the UXP property name if this method is a property accessor, or null if it's a real method.
+ */
+function resolveUxpPropertyName(typeName: string, methodName: string, uxpTypeInfo: UxpTypeInfo): string | null {
+  if (!methodName.startsWith("get")) return null;
+  // The controller getter name is: get + capitalize(propName)
+  // To recover propName: try the raw slice (handles UPPER_CASE), then lowercase-first (handles camelCase)
+  const rawSlice = methodName.slice(3); // e.g. "KEY_AUTO_PEAK_GENERATION" or "Name"
+  if (uxpTypeInfo.properties.has(`${typeName}.${rawSlice}`)) return rawSlice;
+  const lcSlice = rawSlice.charAt(0).toLowerCase() + rawSlice.slice(1); // "name", "id"
+  if (uxpTypeInfo.properties.has(`${typeName}.${lcSlice}`)) return lcSlice;
+  return null;
+}
+
+/**
+ * Generates a JavaScript expression to pass a single UXP argument from the incoming args record.
+ * Handles TickTime reconstruction, Guid wrapping, and registry lookups for UXP object types.
+ */
+function buildUxpArgExpr(
+  argName: string,
+  uxpType: string,
+  instanceTypeNames: Set<string>
+): string {
+  // Normalize "import(...).TypeName" → "TypeName"
+  const normalized = uxpType.replace(/import\([^)]+\)\./g, "").trim();
+
+  // Strip optional / null from union
+  const baseType = normalized
+    .split("|")
+    .map((t) => t.trim())
+    .filter((t) => t !== "undefined" && t !== "null")
+    .join(" | ");
+
+  if (baseType === "TickTime") {
+    return `premierepro.TickTime.createWithSeconds(parseFloat(String(args.${argName})))`;
+  }
+  if (baseType === "Guid" || argName.endsWith("Guid") || argName === "guid") {
+    return `premierepro.Guid.fromString(String(args.${argName}))`;
+  }
+  if (baseType === "string") return `String(args.${argName})`;
+  if (baseType === "number") return `Number(args.${argName})`;
+  if (baseType === "boolean") return `(args.${argName} === true || args.${argName} === "true")`;
+
+  // Check if the base type is a known UXP instance type (needs registry lookup)
+  if (instanceTypeNames.has(baseType)) {
+    return `registry.get(String(args.${argName})) as any`;
+  }
+
+  // Unknown / complex type — pass through as-is
+  return `args.${argName} as any`;
 }
 
 // ----------- Scan generated controller files for method metadata -----------
@@ -125,15 +229,11 @@ function scanControllers(premiereMappings: Map<string, string>): ActionMeta[] {
 
 // Map from base type name to how to resolve an instance from the registry or premierepro
 function uxpResolveExpression(baseName: string, guidArg: string): string {
-  // Some types can be resolved directly via premierepro static methods
-  const DIRECT_RESOLVE: Record<string, string> = {
-    Project: `await premierepro.Project.getProject(premierepro.Guid.fromString(${guidArg}))`,
-    Sequence: `/* Sequence must be retrieved via project.getSequence(guid) — using registry */ registry.get(${guidArg}) as unknown as premierepro.Sequence`,
-  };
-  return (
-    DIRECT_RESOLVE[baseName] ??
-    `/* TODO: resolve ${baseName} */ registry.get(${guidArg})`
-  );
+  // Project can be resolved directly via premierepro.Project.getProject
+  if (baseName === "Project") {
+    return `await premierepro.Project.getProject(premierepro.Guid.fromString(${guidArg}))`;
+  }
+  return `registry.get(${guidArg}) as any`;
 }
 
 // ----------- Generate external WS dispatcher -----------
@@ -167,7 +267,14 @@ ${cases.join("\n")}
 
 // ----------- Generate UXP plugin receiver -----------
 
-function generateUxpReceiver(actions: ActionMeta[], premiereMappings: Map<string, string>): string {
+function generateUxpReceiver(
+  actions: ActionMeta[],
+  premiereMappings: Map<string, string>,
+  uxpTypeInfo: UxpTypeInfo
+): string {
+  // Set of UXP instance type names for registry lookups
+  const instanceTypeNames = new Set(premiereMappings.keys());
+
   // Build the switch cases for the UXP receiver
   const cases = actions.map((a) => {
     const actionKey = `${a.typeName}.${a.methodName}`;
@@ -177,35 +284,51 @@ function generateUxpReceiver(actions: ActionMeta[], premiereMappings: Map<string
     let invocationExpr: string;
 
     if (isStatic) {
-      // premierepro.TypeBaseName.method(args...)
-      const argsList = a.params.map((p) => buildArgExpr(p, a.typeName)).join(", ");
-      invocationExpr = `await premierepro.${baseName}.${a.methodName}(${argsList})`;
+      // Check if this is a property accessor (e.g., getKEY_AUTO_PEAK_GENERATION → KEY_AUTO_PEAK_GENERATION)
+      const propName = resolveUxpPropertyName(a.typeName, a.methodName, uxpTypeInfo);
+      if (propName !== null) {
+        // Property access: premierepro.Base.PROP_NAME
+        invocationExpr = `premierepro.${baseName}.${propName}`;
+      } else {
+        // Method call — use UXP params for proper arg conversion
+        const uxpParams = uxpTypeInfo.methods.get(actionKey) ?? [];
+        const argsList = uxpParams
+          .map((p) => buildUxpArgExpr(p.name, p.uxpType, instanceTypeNames))
+          .join(", ");
+        invocationExpr = `await premierepro.${baseName}.${a.methodName}(${argsList})`;
+      }
     } else {
-      // Resolve instance from registry, then call method
+      // Instance method or property
       const guidParamName = `${baseName.charAt(0).toLowerCase()}${baseName.slice(1)}Guid`;
       const resolveExpr = uxpResolveExpression(baseName, `String(args.${guidParamName})`);
-      const remainingParams = a.params
-        .filter((p) => p !== "body" && p !== guidParamName)
-        .map((p) => buildArgExpr(p, a.typeName))
-        .join(", ");
 
-      // For POST methods, params come from body
-      const bodyArgs = a.httpVerb === "Post"
-        ? a.params
-            .filter((p) => p === "body")
-            .map((_) => `/* body params */ `)
-            .join("")
-        : "";
-
-      invocationExpr = `(async () => {
+      const propName = resolveUxpPropertyName(a.typeName, a.methodName, uxpTypeInfo);
+      if (propName !== null) {
+        // Property access on instance
+        invocationExpr = `(async () => {
         const instance = ${resolveExpr};
-        return await (instance as any).${a.methodName}(${remainingParams});
+        return (instance as any).${propName};
       })()`;
+      } else {
+        // Method call — use UXP params (excluding guid) for proper arg conversion
+        const uxpParams = uxpTypeInfo.methods.get(actionKey) ?? [];
+        const uxpArgsList = uxpParams
+          .map((p) => buildUxpArgExpr(p.name, p.uxpType, instanceTypeNames))
+          .join(", ");
+        invocationExpr = `(async () => {
+        const instance = ${resolveExpr};
+        return await (instance as any).${a.methodName}(${uxpArgsList});
+      })()`;
+      }
     }
+
+    const awaitedExpr = invocationExpr.startsWith("(async")
+      ? `await ${invocationExpr}`
+      : `await Promise.resolve(${invocationExpr})`;
 
     return `    case "${actionKey}": {
       try {
-        const result = await ${invocationExpr.startsWith("(async") ? invocationExpr : `Promise.resolve(${invocationExpr})`};
+        const result = ${awaitedExpr};
         const serialized = serializeResult(result);
         ws.send(JSON.stringify({ requestId: msg.requestId, result: serialized }));
       } catch (err) {
@@ -261,7 +384,7 @@ function serializeResult(value: unknown): unknown {
   return obj;
 }
 
-export function handleBridgeMessage(ws: WebSocket, msg: BridgeMessage): void {
+export async function handleBridgeMessage(ws: WebSocket, msg: BridgeMessage): Promise<void> {
   const args = msg.args ?? {};
 
   switch (msg.action) {
@@ -277,9 +400,9 @@ ${cases.join("\n")}
 `;
 }
 
+// buildArgExpr is kept for the external dispatcher GET methods (still needed for legacy param handling)
 function buildArgExpr(paramName: string, _typeName: string): string {
   if (paramName === "body") return "args";
-  // Guid params → fromString
   if (paramName.endsWith("Guid") || paramName === "guid") {
     return `premierepro.Guid.fromString(String(args.${paramName}))`;
   }
@@ -290,6 +413,7 @@ function buildArgExpr(paramName: string, _typeName: string): string {
 
 async function main(): Promise<void> {
   const premiereMappings = buildPremiereMappings();
+  const uxpTypeInfo = buildUxpTypeInfo();
   const actions = scanControllers(premiereMappings);
 
   console.log(`Scanned ${actions.length} actions from controllers.`);
@@ -308,7 +432,7 @@ async function main(): Promise<void> {
   console.log("Generated src/generated/wsExternalDispatcher.ts");
 
   // Generate UXP plugin receiver
-  const receiverSource = generateUxpReceiver(actions, premiereMappings);
+  const receiverSource = generateUxpReceiver(actions, premiereMappings, uxpTypeInfo);
   fs.writeFileSync(
     path.join(PLUGIN_GENERATED_DIR, "wsReceiver.ts"),
     receiverSource,

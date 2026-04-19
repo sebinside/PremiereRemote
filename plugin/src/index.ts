@@ -37,7 +37,9 @@ function connect(): void {
       return;
     }
 
-    handleBridgeMessage(ws!, msg);
+    handleBridgeMessage(ws!, msg).catch((err: unknown) => {
+      console.error("[Premiere Remote] Error handling bridge message:", err);
+    });
   });
 
   ws.addEventListener("close", () => {

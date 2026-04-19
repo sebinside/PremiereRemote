@@ -12,12 +12,13 @@
     "test": "npm run build && node --test dist/tests/integration.test.js"
   },
   "dependencies": {
+    "@kubb/plugin-client": "^4.37.2",
+    "axios": "^1.7.2",
     "commander": "^12.0.0"
   },
   "devDependencies": {
     "@kubb/cli": "^4.37.2",
     "@kubb/core": "^4.37.2",
-    "@kubb/plugin-client": "^4.37.2",
     "@kubb/plugin-oas": "^4.37.2",
     "@kubb/plugin-ts": "^4.37.2",
     "@types/node": "^20.19.39",

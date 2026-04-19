@@ -11,6 +11,7 @@ export default defineConfig({
   output: {
     path: "src/generated",
     clean: true,
+    extension: { ".ts": ".js" },
   },
   plugins: [
     pluginOas(),
@@ -23,7 +24,6 @@ export default defineConfig({
       output: {
         path: "clients",
       },
-      baseURL: "http://localhost:3000",
     }),
   ],
 });

@@ -6,49 +6,36 @@
  *  - A running instance of Adobe Premiere Pro loaded with the UXP plugin
  *    and pre-configured .prproj test files
  *
- * They use the Kubb-generated typed client (once generate:client has been run).
- * Until the client is generated, raw fetch calls are used as a fallback.
- *
  * Run with: node --test dist/tests/integration.test.js
  */
 
 import { strict as assert } from "assert";
 import { describe, it, before } from "node:test";
+import { setConfig } from "@kubb/plugin-client/clients/axios";
+import { healthobjectObjectGetHealth } from "../generated/clients/healthobjectObjectGetHealth.js";
+import { projectStaticobjectObjectGetActiveProject } from "../generated/clients/projectStaticobjectObjectGetActiveProject.js";
+import { projectobjectObjectGetSequences } from "../generated/clients/projectobjectObjectGetSequences.js";
+import { projectobjectObjectGetActiveSequence } from "../generated/clients/projectobjectObjectGetActiveSequence.js";
+import { sequenceobjectObjectGetVideoTrackCount } from "../generated/clients/sequenceobjectObjectGetVideoTrackCount.js";
+import { sequenceobjectObjectGetPlayerPosition } from "../generated/clients/sequenceobjectObjectGetPlayerPosition.js";
+import { sequenceobjectObjectSetPlayerPosition } from "../generated/clients/sequenceobjectObjectSetPlayerPosition.js";
+import { sequenceobjectObjectClearSelection } from "../generated/clients/sequenceobjectObjectClearSelection.js";
+import type { HealthResponse } from "../generated/types/HealthResponse.js";
 
 const BASE_URL = process.env["PREMIERE_REMOTE_URL"] ?? "http://localhost:3000";
-
-async function get(path: string): Promise<unknown> {
-  const res = await fetch(`${BASE_URL}${path}`);
-  if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
-  return res.json();
-}
-
-async function post(path: string, body: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`POST ${path} → ${res.status}: ${text}`);
-  }
-  return res.json();
-}
 
 // ---------------------------------------------------------------------------
 // Test suite
 // ---------------------------------------------------------------------------
 
 describe("Premiere Remote Integration Tests", () => {
+  before(() => {
+    setConfig({ baseURL: BASE_URL });
+  });
+
   describe("REST: Health", () => {
     it("GET /health returns ok status", async () => {
-      const result = (await get("/health")) as {
-        status: string;
-        server: string;
-        uxpConnected: boolean;
-        timestamp: string;
-      };
+      const result = await healthobjectObjectGetHealth() as HealthResponse;
       assert.equal(result.status, "ok");
       assert.equal(result.server, "running");
       assert.equal(typeof result.uxpConnected, "boolean");
@@ -56,7 +43,7 @@ describe("Premiere Remote Integration Tests", () => {
     });
 
     it("GET /health reports UXP plugin connection state", async () => {
-      const result = (await get("/health")) as { uxpConnected: boolean };
+      const result = await healthobjectObjectGetHealth() as HealthResponse;
       // We just assert it's a boolean; actual connection depends on runtime state
       assert.equal(typeof result.uxpConnected, "boolean");
     });
@@ -66,10 +53,7 @@ describe("Premiere Remote Integration Tests", () => {
     let projectGuid: string;
 
     it("GET /project-static/getActiveProject returns a project", async () => {
-      const result = (await get("/project-static/getActiveProject")) as {
-        guid?: string;
-        name?: string;
-      };
+      const result = await projectStaticobjectObjectGetActiveProject() as { guid?: string; name?: string };
       assert.ok(result.guid, "Expected project guid");
       assert.ok(result.name, "Expected project name");
       projectGuid = result.guid!;
@@ -77,17 +61,13 @@ describe("Premiere Remote Integration Tests", () => {
 
     it("GET /project/getSequences returns an array", async () => {
       if (!projectGuid) return;
-      const result = (await get(
-        `/project/getSequences?projectGuid=${encodeURIComponent(projectGuid)}`
-      )) as unknown[];
+      const result = await projectobjectObjectGetSequences({ projectGuid });
       assert.ok(Array.isArray(result), "Expected array of sequences");
     });
 
     it("GET /project/getActiveSequence returns a sequence", async () => {
       if (!projectGuid) return;
-      const result = (await get(
-        `/project/getActiveSequence?projectGuid=${encodeURIComponent(projectGuid)}`
-      )) as { guid?: string };
+      const result = await projectobjectObjectGetActiveSequence({ projectGuid }) as { guid?: string };
       assert.ok(result.guid, "Expected sequence guid");
     });
   });
@@ -97,46 +77,35 @@ describe("Premiere Remote Integration Tests", () => {
     let projectGuid: string;
 
     before(async () => {
-      const project = (await get("/project-static/getActiveProject")) as {
-        guid?: string;
-      };
+      const project = await projectStaticobjectObjectGetActiveProject() as { guid?: string };
       if (!project.guid) return;
       projectGuid = project.guid;
 
-      const sequence = (await get(
-        `/project/getActiveSequence?projectGuid=${encodeURIComponent(projectGuid)}`
-      )) as { guid?: string };
+      const sequence = await projectobjectObjectGetActiveSequence({ projectGuid }) as { guid?: string };
       if (sequence.guid) sequenceGuid = sequence.guid;
     });
 
     it("GET /sequence/getVideoTrackCount returns a number", async () => {
       if (!sequenceGuid) return;
-      const result = (await get(
-        `/sequence/getVideoTrackCount?sequenceGuid=${encodeURIComponent(sequenceGuid)}`
-      )) as number;
+      const result = await sequenceobjectObjectGetVideoTrackCount({ sequenceGuid });
       assert.equal(typeof result, "number");
     });
 
     it("GET /sequence/getPlayerPosition returns a TickTime", async () => {
       if (!sequenceGuid) return;
-      const result = (await get(
-        `/sequence/getPlayerPosition?sequenceGuid=${encodeURIComponent(sequenceGuid)}`
-      )) as { seconds: number };
+      const result = await sequenceobjectObjectGetPlayerPosition({ sequenceGuid }) as { seconds: number };
       assert.equal(typeof result.seconds, "number");
     });
 
     it("POST /sequence/setPlayerPosition moves playhead", async () => {
       if (!sequenceGuid) return;
-      const result = (await post("/sequence/setPlayerPosition", {
-        sequenceGuid,
-        positionTime: { seconds: 0 },
-      })) as boolean;
+      const result = await sequenceobjectObjectSetPlayerPosition({ sequenceGuid, positionTime: "0" });
       assert.equal(result, true, "Expected setPlayerPosition to succeed");
     });
 
     it("POST /sequence/clearSelection succeeds", async () => {
       if (!sequenceGuid) return;
-      const result = (await post("/sequence/clearSelection", { sequenceGuid })) as boolean;
+      const result = await sequenceobjectObjectClearSelection({ sequenceGuid });
       assert.equal(result, true);
     });
   });

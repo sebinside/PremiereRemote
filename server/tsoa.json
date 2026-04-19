@@ -8,7 +8,8 @@
     "title": "Premiere Remote API",
     "description": "REST and WebSocket API for controlling Adobe Premiere Pro via UXP",
     "version": "1.0.0",
-    "basePath": "/"
+    "basePath": "/",
+    "operationIdTemplate": "{{replace controllerName 'Controller'}}_{{method.name}}"
   },
   "routes": {
     "routesDir": "src/generated",
