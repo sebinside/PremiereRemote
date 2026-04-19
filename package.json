@@ -1,0 +1,17 @@
+{
+  "name": "premiere-remote",
+  "private": true,
+  "workspaces": [
+    "server",
+    "sample-client"
+  ],
+  "scripts": {
+    "generate:api": "npm run generate:api --workspace=server",
+    "generate:dispatchers": "npm run generate:dispatchers --workspace=server",
+    "generate:client": "npm run generate:client --workspace=sample-client",
+    "generate:all": "npm run generate:api && npm run generate:dispatchers && npm run generate:client"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "entryFile": "src/server.ts",
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controllerPathGlobs": ["src/controllers/**/*Controller.ts"],
+  "spec": {
+    "outputDirectory": "src/generated",
+    "specVersion": 3,
+    "title": "Premiere Remote API",
+    "description": "REST and WebSocket API for controlling Adobe Premiere Pro via UXP",
+    "version": "1.0.0",
+    "basePath": "/"
+  },
+  "routes": {
+    "routesDir": "src/generated",
+    "middleware": "express"
+  }
+}

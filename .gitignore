@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Generated — run `npm run generate:all` to recreate
+server/src/generated/
+server/src/controllers/generated/
+server/src/controllers/shared/serializedTypes.ts
+plugin/src/generated/
+sample-client/src/generated/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

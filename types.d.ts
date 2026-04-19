@@ -1132,7 +1132,7 @@ export declare type EncoderManager = {
    * @param removeUponCompletion
    * @param startQueueImmediately
    */
-  encodeFile(filePath: string, outputFile?: string, presetFile?: string, inPoint: TickTime, outPoint: TickTime, workArea?: number, removeUponCompletion?: boolean, startQueueImmediately?: boolean): Promise<boolean>
+  encodeFile(filePath: string, outputFile: string, presetFile: string, inPoint: TickTime, outPoint: TickTime, workArea?: number, removeUponCompletion?: boolean, startQueueImmediately?: boolean): Promise<boolean>
 
   /**
    * Check if AME is installed.

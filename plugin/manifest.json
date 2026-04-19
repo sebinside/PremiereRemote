@@ -1,0 +1,27 @@
+{
+  "id": "com.premiere-remote.uxp-plugin",
+  "name": "Premiere Remote",
+  "version": "1.0.0",
+  "manifestVersion": 7,
+  "host": [
+    {
+      "app": "PR",
+      "minVersion": "24.0"
+    }
+  ],
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "panel1",
+      "label": {
+        "default": "Premiere Remote"
+      },
+      "main": "src/index.ts"
+    }
+  ],
+  "requiredPermissions": {
+    "network": {
+      "domains": ["ws://localhost"]
+    }
+  }
+}
