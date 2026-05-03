@@ -1,5 +1,1 @@
-node_modules/
-.idea/
-jquery.min.js
-host/build/
-plugin/
+.vscode/
