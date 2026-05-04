@@ -22,20 +22,20 @@
       "id": "de.sebinside.premiereremote.statuspanel",
       "type": "panel",
       "minimumSize": {
-        "width": 430,
-        "height": 500
+        "width": 310,
+        "height": 160
       },
       "maximumSize": {
-        "width": 2000,
-        "height": 2000
+        "width": 800,
+        "height": 500
       },
       "preferredDockedSize": {
-        "width": 230,
-        "height": 300
+        "width": 310,
+        "height": 200
       },
       "preferredFloatingSize": {
-        "width": 400,
-        "height": 300
+        "width": 420,
+        "height": 210
       },
       "label": {
         "default": "Main Panel"

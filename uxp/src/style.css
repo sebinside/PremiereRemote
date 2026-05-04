@@ -1,52 +1,149 @@
+:root {
+  --color-ws:   #4a9eff;
+  --color-http: #a855f7;
+  --color-mcp:  #f97316;
+  --color-count: #888888;
+  --color-bg:   var(--uxp-host-background-color, #1e1e1e);
+  --color-text: var(--uxp-host-text-color, #d4d4d4);
+  --color-text-secondary: var(--uxp-host-text-color-secondary, #888888);
+  --color-border: var(--uxp-host-border-color, #3a3a3a);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  padding: 0 16px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Adobe Clean', sans-serif;
+  font-size: 12px;
+  height: 100vh;
+  overflow: hidden;
 }
 
-li:before {
-  content: "• ";
-  width: 3em;
-}
-
-#plugin-body {
-  margin-top: 5px;
-  border: 1px solid #808080;
-  border-radius: 4px;
-  padding: 16px;
-  overflow: scroll;
-  height: 220px;
-}
-
-sp-heading {
-  color: var(--uxp-host-text-color-secondary, white);
-}
-
-footer {
+/* ── Panel layout ── */
+.panel {
   display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  height: 100%;
+}
+
+/* ── Counter row ── */
+.counters {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+}
+
+.counter .badge {
+  margin-right: 6px;
+}
+
+/* ── Badges (protocol pills) ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.badge--ws {
+  background: rgba(74, 158, 255, 0.18);
+  color: var(--color-ws);
+}
+
+.badge--http {
+  background: rgba(168, 85, 247, 0.18);
+  color: var(--color-http);
+}
+
+.badge--mcp {
+  background: rgba(249, 115, 22, 0.18);
+  color: var(--color-mcp);
+}
+
+/* ── Call counts ── */
+.count {
+  color: var(--color-count);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Last command ── */
+.last-command {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  margin-bottom: 10px;
+}
+
+.section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.command-row {
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
-footer > * {
-  margin: 5px;
+.command-row .badge {
+  margin-right: 6px;
 }
 
-footer div {
-  width: 100%;
-  margin-bottom: 1em;
+.command-name {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--color-text);
 }
 
-.main-div {
-  position: relative;
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+  margin-bottom: 4px;
 }
 
-.clear-btn {
-  display: none;
-  position: absolute;
-  top: 10px;
-  right: 6px;
-  cursor: pointer;
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 7px;
 }
 
-.main-div:hover .clear-btn {
-  display: inline;
+.status-dot--ok    { background: #3cb371; }
+.status-dot--warn  { background: #f0a500; }
+.status-dot--error { background: #e05252; }
+
+.status-text {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

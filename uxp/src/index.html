@@ -1,17 +1,44 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="src/main.js"></script>
+    <meta charset="utf-8" />
     <link rel="stylesheet" href="src/style.css" />
   </head>
   <body>
-    <h4 id="plugin-heading">Application Info</h4>
-    <div class="main-div">
-      <div id="plugin-body"> </div>
+    <div class="panel">
+
+      <!-- Call counters -->
+      <div class="counters">
+        <div class="counter">
+          <span class="badge badge--ws">WS</span>
+          <span class="count" id="count-ws">1.2K</span>
+        </div>
+        <div class="counter">
+          <span class="badge badge--http">HTTP</span>
+          <span class="count" id="count-http">847</span>
+        </div>
+        <div class="counter">
+          <span class="badge badge--mcp">MCP</span>
+          <span class="count" id="count-mcp">23</span>
+        </div>
+      </div>
+
+      <!-- Last command -->
+      <div class="last-command">
+        <span class="section-label">Last command</span>
+        <div class="command-row" id="last-command-row">
+          <span class="badge badge--http" id="last-command-source">HTTP</span>
+          <span class="command-name" id="last-command-name">getSequenceName</span>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span class="status-dot status-dot--ok" id="status-dot"></span>
+        <span class="status-text" id="status-text">Connected</span>
+      </div>
+
     </div>
-    <footer>
-      <button id="btnPopulate">Populate App Info</button>
-      <button id="clear-btn">Clear App Info</button>
-    </footer>
+    <script src="main.js"></script>
   </body>
 </html>
