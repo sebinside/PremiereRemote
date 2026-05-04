@@ -1,0 +1,7 @@
+{
+  "name": "premiereremote",
+  "version": "3.0.0",
+  "description": "PremiereRemote - MCP, HTTP, and WS servers for Adobe Premiere Pro UXP",
+  "author": "sebinside",
+  "license": "MIT"
+}

@@ -4,6 +4,6 @@
 </p>
 <p>&nbsp;</p>
 
-## PremiereRemote - MCP, HTTP, and WS server for Adobe Premiere Pro UXP
+## PremiereRemote - MCP, HTTP, and WS servers for Adobe Premiere Pro UXP
 
 Nothing to see here (yet)

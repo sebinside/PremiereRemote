@@ -1,0 +1,96 @@
+{
+  "id": "de.sebinside.premiereremote",
+  "name": "PremiereRemote",
+  "version": "3.0.0",
+  "main": "src/index.html",
+  "host": {
+    "app": "premierepro",
+    "minVersion": "25.6"
+  },
+  "manifestVersion": 5,
+  "requiredPermissions": {
+    "localFileSystem": "request",
+    "clipboard": "readAndWrite",
+    "network": {
+      "domains": [
+        "ws://localhost"
+      ]
+    }
+  },
+  "entrypoints": [
+    {
+      "id": "de.sebinside.premiereremote.statuspanel",
+      "type": "panel",
+      "minimumSize": {
+        "width": 430,
+        "height": 500
+      },
+      "maximumSize": {
+        "width": 2000,
+        "height": 2000
+      },
+      "preferredDockedSize": {
+        "width": 230,
+        "height": 300
+      },
+      "preferredFloatingSize": {
+        "width": 400,
+        "height": 300
+      },
+      "label": {
+        "default": "Main Panel"
+      },
+      "icons": [
+        {
+          "width": 23,
+          "height": 23,
+          "path": "icons/dark.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "darkest",
+            "dark",
+            "medium"
+          ]
+        },
+        {
+          "width": 23,
+          "height": 23,
+          "path": "icons/light.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "lightest",
+            "light"
+          ]
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "width": 48,
+      "height": 48,
+      "path": "icons/plugin-icon.png",
+      "scale": [
+        1,
+        2
+      ],
+      "theme": [
+        "darkest",
+        "dark",
+        "medium",
+        "lightest",
+        "light",
+        "all"
+      ],
+      "species": [
+        "generic"
+      ]
+    }
+  ]
+}
