@@ -1,6 +1,6 @@
 import "./ui.js";
-import "./actions/common.js";
-import { getActiveSequenceName } from "./actions/common.js";
+import "../actions/common.js";
+import { getActiveSequenceName } from "../actions/common.js";
 import { setStatus } from "./ui.js";
 
 // TODO: Replace dummy testing code

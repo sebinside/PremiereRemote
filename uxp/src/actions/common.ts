@@ -1,4 +1,4 @@
-import type { premierepro } from "../types.js";
+import type { premierepro } from "../internal/types.js";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ppro = require("premierepro") as premierepro;
