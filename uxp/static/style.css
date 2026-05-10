@@ -30,6 +30,11 @@ body {
   flex-direction: column;
   padding: 14px 16px;
   height: 100%;
+  overflow-y: auto;
+}
+
+.panel > * {
+  flex-shrink: 0;
 }
 
 /* ── Counter row ── */

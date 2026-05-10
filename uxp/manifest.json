@@ -2,7 +2,7 @@
   "id": "de.sebinside.premiereremote",
   "name": "PremiereRemote",
   "version": "3.0.0",
-  "main": "src/index.html",
+  "main": "build/index.html",
   "host": {
     "app": "premierepro",
     "minVersion": "25.6"

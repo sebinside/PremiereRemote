@@ -3,5 +3,22 @@
   "version": "3.0.0",
   "description": "PremiereRemote - MCP, HTTP, and WS servers for Adobe Premiere Pro UXP",
   "author": "sebinside",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf build",
+    "build": "npm run clean && esbuild src/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro && cp -r static/. build/",
+    "dev": "npm run clean && cp -r static/. build/ && esbuild src/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write src"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "esbuild": "^0.28.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.0"
+  }
 }
