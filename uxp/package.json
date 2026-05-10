@@ -10,7 +10,8 @@
     "dev": "npm run clean && cp -r static/. build/ && esbuild src/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "prepare-packaging": "node scripts/prepare-packaging.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
