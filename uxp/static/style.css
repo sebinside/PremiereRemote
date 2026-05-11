@@ -69,17 +69,17 @@ body {
   white-space: nowrap;
 }
 
-.badge--ws {
+.badge-ws {
   background: rgba(74, 158, 255, 0.18);
   color: var(--color-ws);
 }
 
-.badge--http {
+.badge-http {
   background: rgba(168, 85, 247, 0.18);
   color: var(--color-http);
 }
 
-.badge--mcp {
+.badge-mcp {
   background: rgba(249, 115, 22, 0.18);
   color: var(--color-mcp);
 }
@@ -111,10 +111,11 @@ body {
 .command-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  overflow: hidden;
 }
 
 .command-row .badge {
+  flex-shrink: 0;
   margin-right: 6px;
 }
 
@@ -122,6 +123,9 @@ body {
   font-family: monospace;
   font-size: 12px;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Status bar ── */
@@ -141,9 +145,9 @@ body {
   margin-right: 7px;
 }
 
-.status-dot--ok    { background: #3cb371; }
-.status-dot--warn  { background: #f0a500; }
-.status-dot--error { background: #e05252; }
+.status-dot-ok    { background: #3cb371; }
+.status-dot-warn  { background: #f0a500; }
+.status-dot-error { background: #e05252; }
 
 .status-text {
   font-size: 11px;
@@ -151,4 +155,15 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.info-icon {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  margin-left: 6px;
+  opacity: 0.45;
+  cursor: default;
+  fill: var(--color-text);
 }

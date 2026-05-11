@@ -10,16 +10,16 @@
       <!-- Call counters -->
       <div class="counters">
         <div class="counter">
-          <span class="badge badge--ws">WS</span>
-          <span class="count" id="count-ws">1.2K</span>
+          <span class="badge badge-ws">WS</span>
+          <span class="count" id="count-ws">0</span>
         </div>
         <div class="counter">
-          <span class="badge badge--http">HTTP</span>
-          <span class="count" id="count-http">847</span>
+          <span class="badge badge-http">HTTP</span>
+          <span class="count" id="count-http">0</span>
         </div>
         <div class="counter">
-          <span class="badge badge--mcp">MCP</span>
-          <span class="count" id="count-mcp">23</span>
+          <span class="badge badge-mcp">MCP</span>
+          <span class="count" id="count-mcp">0</span>
         </div>
       </div>
 
@@ -27,15 +27,18 @@
       <div class="last-command">
         <span class="section-label">Last command</span>
         <div class="command-row" id="last-command-row">
-          <span class="badge badge--http" id="last-command-source">HTTP</span>
-          <span class="command-name" id="last-command-name">getSequenceName</span>
+          <span class="badge badge-http" id="last-command-source">HTTP</span>
+          <span class="command-name" id="last-command-name">-</span>
         </div>
       </div>
 
       <!-- Status bar -->
       <div class="status-bar">
-        <span class="status-dot status-dot--ok" id="status-dot"></span>
-        <span class="status-text" id="status-text">Connected</span>
+        <span class="status-dot status-dot-error" id="status-dot"></span>
+        <span class="status-text" id="status-text">Not loaded</span>
+        <svg class="info-icon" id="status-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" title="PremiereRemote was not loaded properly. Try restarting Premiere Pro and/or this plugin. If the problem persists, try reinstalling the plugin.">
+          <path d="M320 112C434.9 112 528 205.1 528 320C528 434.9 434.9 528 320 528C205.1 528 112 434.9 112 320C112 205.1 205.1 112 320 112zM320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM280 400C266.7 400 256 410.7 256 424C256 437.3 266.7 448 280 448L360 448C373.3 448 384 437.3 384 424C384 410.7 373.3 400 360 400L352 400L352 312C352 298.7 341.3 288 328 288L280 288C266.7 288 256 298.7 256 312C256 325.3 266.7 336 280 336L304 336L304 400L280 400zM320 256C337.7 256 352 241.7 352 224C352 206.3 337.7 192 320 192C302.3 192 288 206.3 288 224C288 241.7 302.3 256 320 256z"/>
+        </svg>
       </div>
 
     </div>
