@@ -30,7 +30,7 @@ export function setLastCommand(name: string, source: SourceType): void {
     }
 }
 
-export function setStatus(
+function _setStatus(
     state: StatusState,
     message: string,
     detail?: string,
@@ -43,12 +43,45 @@ export function setStatus(
     if (icon) icon.setAttribute("title", detail || "");
 }
 
+export function setStatus(status: Status): void {
+    _setStatus(status.state, status.message, status.detail);
+}
+
+export type Status = (typeof Statuses)[keyof typeof Statuses];
+export const Statuses = {
+    NOT_LOADED: {
+        state: "error" as StatusState,
+        message: "Not loaded",
+        detail: "PremiereRemote has not been loaded yet.",
+    },
+    INITIALIZING: {
+        state: "warn" as StatusState,
+        message: "Initializing...",
+        detail: "PremiereRemote has been loaded and is initializing. Please wait a moment...",
+    },
+    CONNECTED: {
+        state: "ok" as StatusState,
+        message: "Connected",
+        detail: "PremiereRemote is connected and ready.",
+    },
+    DISCONNECTED: {
+        state: "warn" as StatusState,
+        message: "Disconnected",
+        detail: "PremiereRemote is disconnected from the server.",
+    },
+    ERROR: {
+        state: "error" as StatusState,
+        message: "Error",
+        detail: "An error occurred in PremiereRemote.",
+    },
+} as const;
+
 export function resetUI(): void {
     for (const source of Object.keys(counts) as SourceType[]) {
         setCount(source, 0);
     }
     setLastCommand("-", "http");
-    setStatus(
+    _setStatus(
         "warn",
         "Initializing...",
         "PremiereRemote is initializing. Please wait a moment...",
