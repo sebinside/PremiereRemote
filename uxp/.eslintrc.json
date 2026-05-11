@@ -6,5 +6,5 @@
     "browser": true,
     "commonjs": true
   },
-  "ignorePatterns": ["src/internal/types.d.ts"]
+  "ignorePatterns": ["src/internal/types.d.ts", "scripts/"]
 }
