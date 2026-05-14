@@ -41,7 +41,7 @@ function connect(): void {
 
     ws.addEventListener("close", () => {
         if (stopped) return;
-        console.warn(`WebSocket client connection closed. Reconnecting...`);
+        console.warn(`No WebSocket connection. Reconnecting...`);
         setStatus(Statuses.DISCONNECTED);
         scheduleReconnect();
     });

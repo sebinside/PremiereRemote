@@ -22,9 +22,9 @@ export const Statuses = {
         detail: "PremiereRemote is connected and ready.",
     },
     DISCONNECTED: {
-        state: "warn" as StatusState,
+        state: "error" as StatusState,
         message: "Disconnected",
-        detail: "PremiereRemote is disconnected from the server.",
+        detail: "PremiereRemote is disconnected from the server. Reconnecting...",
     },
     ERROR: {
         state: "error" as StatusState,
