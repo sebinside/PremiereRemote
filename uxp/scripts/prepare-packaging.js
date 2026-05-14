@@ -3,10 +3,19 @@
  * This is required because the UXP packager cannot handle symlinks (lol).
  */
 
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
 
-const binDir = path.resolve(__dirname, "../node_modules/.bin");
+const scriptsDirectoryName = path.dirname(fileURLToPath(import.meta.url));
+const binDir = path.resolve(scriptsDirectoryName, "../node_modules/.bin");
+
+if (!fs.existsSync(binDir)) {
+    console.warn(
+        "✅ `node_modules/.bin` directory does not exist. Further packaging preparation skipped.",
+    );
+    process.exit(0);
+}
 
 for (const name of fs.readdirSync(binDir)) {
     const linkPath = path.join(binDir, name);
@@ -21,4 +30,5 @@ for (const name of fs.readdirSync(binDir)) {
     console.log(`Resolved: ${name}`);
 }
 
-console.log("Done.");
+console.log("✅ Done prepare packaging.");
+console.log("➡️ Don't forget to reinstall dependencies after packaging using `pnpm install`.");
