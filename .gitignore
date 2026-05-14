@@ -1,4 +1,8 @@
 .vscode/
-node_modules/
-uxp/build/
 .pnpm-store/
+node_modules/
+
+uxp/build/
+uxp/src/generated/
+
+server/openapi.json
