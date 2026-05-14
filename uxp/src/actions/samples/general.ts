@@ -23,6 +23,9 @@ export async function getActiveSequenceName(): Promise<string | null> {
  * @param param1 A string parameter. You can replace this with any parameters you need for your action.
  * @param param2 A number parameter. You can replace this with any parameters you need for your action.
  */
-export async function functionWithSomeParameters(param1: string, param2: number): Promise<void> {
+export async function functionWithSomeParameters(
+    param1: string,
+    param2: number,
+): Promise<void> {
     console.log("This is a dummy function with parameters:", param1, param2);
 }
