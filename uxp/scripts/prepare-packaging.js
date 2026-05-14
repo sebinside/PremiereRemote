@@ -1,5 +1,7 @@
-// Replaces symlinks in node_modules/.bin with copies of their real content.
-// Required because the UXP packager cannot handle symlinks (lol).
+/**
+ * @fileoverview Replaces symlinks in node_modules/.bin with copies of their real content.
+ * This is required because the UXP packager cannot handle symlinks (lol).
+ */
 
 const fs = require("fs");
 const path = require("path");

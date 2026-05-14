@@ -17,6 +17,10 @@ export async function getActiveSequence(): Promise<Sequence | null> {
     return sequence;
 }
 
+/**
+ * Returns the name of the active sequence, i.e., the sequence that is currently visible in the timeline panel.
+ * @returns The name of the active sequence or null if no sequence is active.
+ */
 export async function getActiveSequenceName(): Promise<string | null> {
     const sequence = await getActiveSequence();
     if (!sequence) return null;

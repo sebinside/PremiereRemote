@@ -4,14 +4,18 @@
   "description": "PremiereRemote - MCP, HTTP, and WS servers for Adobe Premiere Pro UXP",
   "author": "sebinside",
   "license": "MIT",
+  "type": "module",
   "scripts": {
+    "build": "pnpm run setup && pnpm run bundle",
+    "dev": "pnpm run setup && nodemon --watch src --ext ts --exec \"node scripts/generate-api.js && pnpm run bundle\"",
     "clean": "rm -rf build",
-    "build": "pnpm run clean && esbuild src/internal/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro && cp -r static/. build/",
-    "dev": "pnpm run clean && cp -r static/. build/ && esbuild src/internal/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro --watch",
+    "setup": "pnpm run clean && node scripts/generate-api.js && cp -r static/. build/",
+    "bundle": "esbuild src/internal/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",
+    "generate-api": "node scripts/generate-api.js",
+    "prepare-packaging": "node scripts/prepare-packaging.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "format": "prettier --write src",
-    "prepare-packaging": "node scripts/prepare-packaging.js"
+    "format": "prettier --write src"
   },
   "devDependencies": {
     "@types/node": "^25.7.0",
@@ -20,6 +24,7 @@
     "esbuild": "^0.28.0",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
+    "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
     "ts-morph": "^28.0.0",
     "typescript": "^6.0.3"
