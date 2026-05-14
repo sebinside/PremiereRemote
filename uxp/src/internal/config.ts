@@ -1,4 +1,4 @@
-export const WEBSOCKET_PORT = 8083;
+export const WEBSOCKET_PORT = 8085;
 export const WEBSOCKET_URL = `ws://localhost:${WEBSOCKET_PORT}`;
 
 export type ResponseStatus =

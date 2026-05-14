@@ -6,3 +6,4 @@ uxp/build/
 uxp/src/generated/
 
 server/openapi.json
+server/dist
