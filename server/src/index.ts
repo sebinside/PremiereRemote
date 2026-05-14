@@ -124,13 +124,15 @@ api.register({
     },
 });
 
+let httpServer: ReturnType<typeof app.listen> | null = null;
+
 api.init().then(() => {
     app.use((req, res, next) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         api.handleRequest(req as any, req, res).catch(next);
     });
 
-    app.listen(HTTP_PORT, () => {
+    httpServer = app.listen(HTTP_PORT, () => {
         console.log(`HTTP server listening on  http://localhost:${HTTP_PORT}`);
         console.log(`Swagger UI available at   http://localhost:${HTTP_PORT}/docs`);
     });
@@ -176,3 +178,15 @@ wss.on('connection', (ws) => {
 wss.on('listening', () => {
     console.log(`WebSocket server listening on ws://localhost:${WS_PORT}`);
 });
+
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
+
+function shutdown(): void {
+    console.log('Shutting down...');
+    rejectAllPending('Server is shutting down');
+    wss.close();
+    httpServer?.close(() => process.exit(0));
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

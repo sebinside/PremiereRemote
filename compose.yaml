@@ -1,0 +1,6 @@
+services:
+  premiere-remote:
+    build: .
+    ports:
+      - "8084:8084"
+      - "8085:8085"

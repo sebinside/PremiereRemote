@@ -1,0 +1,8 @@
+.git/
+
+uxp/node_modules/
+uxp/build/
+
+server/node_modules/
+server/dist/
+
