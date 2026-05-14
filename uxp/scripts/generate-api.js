@@ -11,7 +11,12 @@ console.log("Generating API...");
 
 const project = new Project();
 project.addSourceFilesAtPaths("src/actions/**/*.ts");
-console.log(`Identified action files: ${project.getSourceFiles().map((f) => f.getBaseName()).join(", ")}`);
+console.log(
+    `Identified action files: ${project
+        .getSourceFiles()
+        .map((f) => f.getBaseName())
+        .join(", ")}`,
+);
 
 const openApiSpec = {
     openapi: "3.0.0",
