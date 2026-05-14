@@ -185,7 +185,14 @@ for (const sourceFile of sourceFiles) {
         };
 
         registryImports += `import { ${name} as ${namespaceAlias}__${name} } from "${importPath}";\n`;
-        registryEntries += `    "${namespace}/${name}": ${namespaceAlias}__${name},\n`;
+
+        const paramMetaItems = Object.entries(properties)
+            .map(
+                ([pName, { type: pType }]) =>
+                    `            { name: "${pName}", type: "${pType}", required: ${required.has(pName)} }`,
+            )
+            .join(",\n");
+        registryEntries += `    "${namespace}/${name}": {\n        fn: ${namespaceAlias}__${name},\n        params: [${paramMetaItems ? `\n${paramMetaItems}\n        ` : ""}],\n    },\n`;
     }
 }
 
@@ -213,10 +220,16 @@ fs.mkdirSync(path.dirname(serverOutPath), { recursive: true });
 fs.mkdirSync(path.dirname(registryOutPath), { recursive: true });
 
 fs.writeFileSync(serverOutPath, JSON.stringify(openApiDoc, null, 2));
+const registryTypes =
+    `\nexport type ParamType = "string" | "number" | "boolean";\n` +
+    `\nexport interface ParamMeta {\n    name: string;\n    type: ParamType;\n    required: boolean;\n}\n` +
+    `\nexport interface RegistryEntry {\n    fn: Function;\n    params: ParamMeta[];\n}\n`;
+
 fs.writeFileSync(
     registryOutPath,
     registryImports +
-        `\nexport const apiRegistry: Record<string, Function> = {\n${registryEntries}};\n`,
+        registryTypes +
+        `\nexport const registry: Record<string, RegistryEntry> = {\n${registryEntries}};\n`,
 );
 
 console.log(
