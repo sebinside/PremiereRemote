@@ -31,4 +31,6 @@ for (const name of fs.readdirSync(binDir)) {
 }
 
 console.log("✅ Done prepare packaging.");
-console.log("➡️ Don't forget to reinstall dependencies after packaging using `pnpm install`.");
+console.log(
+    "➡️ Don't forget to reinstall dependencies after packaging using `pnpm install`.",
+);

@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-console.log("Generating API...");
+console.log("Generating PremiereRemote API");
 const scriptsDirectoryName = path.dirname(fileURLToPath(import.meta.url));
 const { version } = JSON.parse(
     fs.readFileSync(
@@ -19,12 +19,7 @@ const { version } = JSON.parse(
 
 const project = new Project();
 project.addSourceFilesAtPaths("src/actions/**/*.ts");
-console.log(
-    `Identified action files: ${project
-        .getSourceFiles()
-        .map((f) => f.getBaseName())
-        .join(", ")}`,
-);
+const sourceFiles = project.getSourceFiles();
 
 const openApiPaths = {};
 let registryImports =
@@ -33,7 +28,7 @@ let registryEntries = "";
 let actionCount = 0;
 const tags = new Set();
 
-for (const sourceFile of project.getSourceFiles()) {
+for (const sourceFile of sourceFiles) {
     const namespace = path
         .relative(path.resolve("src/actions"), sourceFile.getFilePath())
         .replace(/\\/g, "/")
@@ -44,21 +39,28 @@ for (const sourceFile of project.getSourceFiles()) {
         .replace(/\\/g, "/")
         .replace(/\.ts$/, ".js");
 
+    // Actions, provided by the API, are exported functions with a non-empty JSDoc description.
     const actions = sourceFile
         .getFunctions()
         .filter(
             (f) => f.isExported() && f.getJsDocs()[0]?.getDescription().trim(),
         );
+    console.log(
+        `➡️ ${path.relative(
+            path.resolve("src/actions"),
+            sourceFile.getFilePath(),
+        )}`,
+    );
 
-    console.log(`${namespace}: ${actions.length} action(s)`);
-
-    for (const func of actions) {
-        const name = func.getName();
+    for (const action of actions) {
+        const hasParams = action.getParameters().length > 0;
+        const name = action.getName();
+        console.log(`   • ${name}(${hasParams ? "..." : ""})`);
         actionCount++;
 
-        const jsDoc = func.getJsDocs()[0];
-        const description = jsDoc.getDescription().trim();
-        const returnsComment = String(
+        const jsDoc = action.getJsDocs()[0];
+        const descriptionDoc = jsDoc.getDescription().trim();
+        const returnsDoc = String(
             jsDoc
                 .getTags()
                 .find((t) => ["returns", "return"].includes(t.getTagName()))
@@ -67,11 +69,12 @@ for (const sourceFile of project.getSourceFiles()) {
 
         const properties = {};
         const required = new Set();
-        for (const param of func.getParameters()) {
+        for (const param of action.getParameters()) {
             const paramName = param.getName();
             const paramType = param
                 .getType()
                 .getText(undefined, TypeFormatFlags.NoTruncation);
+
             const knownType = {
                 string: "string",
                 number: "number",
@@ -79,51 +82,82 @@ for (const sourceFile of project.getSourceFiles()) {
             }[paramType];
             if (!knownType)
                 console.warn(
-                    `  Warning: unsupported type "${paramType}" (${name}.${paramName}), falling back to string`,
+                    `   ⚠️ Warning: unsupported parameter type "${paramType}", falling back to string`,
                 );
-            properties[paramName] = { type: knownType ?? "string" };
+
+            const paramDoc = String(
+                jsDoc
+                    .getTags()
+                    .find(
+                        (t) =>
+                            t.getTagName() === "param" &&
+                            t.getName() === paramName,
+                    )
+                    ?.getComment() ?? "",
+            ).trim();
+            if (!paramDoc)
+                console.warn(
+                    `   ⚠️ Warning: missing @param description for "${paramName}", parameter description will be empty`,
+                );
+
+            properties[paramName] = {
+                type: knownType ?? "string",
+                ...(paramDoc ? { description: paramDoc } : {}),
+            };
             if (!param.isOptional()) required.add(paramName);
         }
 
-        const returnTypeText = func
+        const returnType = action
             .getReturnType()
             .getText(undefined, TypeFormatFlags.NoTruncation);
         const unwrappedReturn = (
-            returnTypeText.match(/^Promise<(.+)>$/s)?.[1] ?? returnTypeText
+            returnType.match(/^Promise<(.+)>$/s)?.[1] ?? returnType
         )
             .replace(/\s*\|\s*(null|undefined)\s*/g, "")
             .trim();
-        const returnSchema =
-            unwrappedReturn === "void"
-                ? null
-                : unwrappedReturn === "string"
-                  ? { type: "string" }
-                  : unwrappedReturn === "number"
-                    ? { type: "number" }
-                    : unwrappedReturn === "boolean"
-                      ? { type: "boolean" }
-                      : unwrappedReturn.endsWith("[]")
-                        ? { type: "array" }
-                        : { type: "object" };
+        let returnSchema;
+        switch (unwrappedReturn) {
+            case "void":
+                returnSchema = null;
+                break;
+            case "string":
+                returnSchema = { type: "string" };
+                break;
+            case "number":
+                returnSchema = { type: "number" };
+                break;
+            case "boolean":
+                returnSchema = { type: "boolean" };
+                break;
+            default:
+                returnSchema = unwrappedReturn.endsWith("[]")
+                    ? { type: "array" }
+                    : { type: "object" };
+        }
 
-        const tag = namespace;
-        tags.add(tag);
+        if (!returnsDoc && unwrappedReturn !== "void")
+            console.warn(
+                `   ⚠️ Warning: missing @returns JSDoc, response description will be empty`,
+            );
+
+        tags.add(namespace);
         openApiPaths[`/${namespace}/${name}`] = {
             get: {
-                summary: description,
+                summary: descriptionDoc,
                 operationId: `${namespace}/${name}`,
-                tags: [tag],
+                tags: [namespace],
                 parameters: Object.entries(properties).map(
-                    ([paramName, schema]) => ({
+                    ([paramName, { description: paramDesc, ...schema }]) => ({
                         name: paramName,
                         in: "query",
                         required: required.has(paramName),
+                        ...(paramDesc ? { description: paramDesc } : {}),
                         schema,
                     }),
                 ),
                 responses: {
                     200: {
-                        description: returnsComment || "Success",
+                        description: returnsDoc || "Success",
                         ...(returnSchema
                             ? {
                                   content: {
@@ -185,4 +219,6 @@ fs.writeFileSync(
         `\nexport const apiRegistry: Record<string, Function> = {\n${registryEntries}};\n`,
 );
 
-console.log(`Done: ${actionCount} action(s) total`);
+console.log(
+    `✅ Done: ${sourceFiles.length} action file(s), ${actionCount} endpoint(s) total`,
+);
