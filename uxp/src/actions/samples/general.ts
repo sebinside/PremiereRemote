@@ -4,7 +4,7 @@
  * Feel free to use these as a starting point for your own actions, or delete the entire folder if you don't need them.
  */
 
-import type { premierepro } from "../../internal/types.js";
+import type { premierepro } from "@adobe/premierepro";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars
 const ppro = require("premierepro") as premierepro;

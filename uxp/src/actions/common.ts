@@ -2,16 +2,16 @@
  * @fileoverview This file contains common utility functions that can be used to either build more advanced actions or by AI agents to query the state as part of the MCP server.
  */
 
-import {
-    Constants,
+import type {
     premierepro,
     Sequence,
     TickTime,
     VideoTrack,
-} from "../internal/types.d.js";
+} from "@adobe/premierepro";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ppro = require("premierepro") as premierepro;
+const { Constants } = ppro;
 
 export async function getActiveSequence(): Promise<Sequence | null> {
     const project = await ppro.Project.getActiveProject();

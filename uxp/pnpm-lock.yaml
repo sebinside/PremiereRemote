@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@adobe/premierepro':
+        specifier: ^26.3.0
+        version: 26.3.0
       '@types/node':
         specifier: ^25.7.0
         version: 25.7.0
@@ -40,6 +43,10 @@ importers:
         version: 6.0.3
 
 packages:
+
+  '@adobe/premierepro@26.3.0':
+    resolution: {integrity: sha512-J84zEX8R4L5EU5EVVs3AWkd4LRoXPKueo28jPNfwwDAo69TOSNsAblImtsAmJR4HGDDazsvHkMQE3JBJqIcB9Q==}
+    engines: {node: '>=20.0.0'}
 
   '@esbuild/aix-ppc64@0.28.0':
     resolution: {integrity: sha512-lhRUCeuOyJQURhTxl4WkpFTjIsbDayJHih5kZC1giwE+MhIzAb7mEsQMqMf18rHLsrb5qI1tafG20mLxEWcWlA==}
@@ -686,6 +693,8 @@ packages:
     engines: {node: '>=10'}
 
 snapshots:
+
+  '@adobe/premierepro@26.3.0': {}
 
   '@esbuild/aix-ppc64@0.28.0':
     optional: true
