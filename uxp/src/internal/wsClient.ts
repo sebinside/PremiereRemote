@@ -196,6 +196,23 @@ function buildArgs(
             continue;
         }
 
+        // Coerce strings to the target type (HTTP query params always arrive as strings)
+        if (typeof value === "string" && meta.type !== "string") {
+            if (meta.type === "number") {
+                const num = Number(value);
+                if (isNaN(num)) {
+                    return `Parameter "${meta.name}" must be of type number, got non-numeric string "${value}"`;
+                }
+                args.push(num);
+                continue;
+            }
+            if (meta.type === "boolean") {
+                if (value === "true") { args.push(true); continue; }
+                if (value === "false") { args.push(false); continue; }
+                return `Parameter "${meta.name}" must be of type boolean, expected "true" or "false", got "${value}"`;
+            }
+        }
+
         if (typeof value !== meta.type) {
             return `Parameter "${meta.name}" must be of type ${meta.type}, got ${typeof value}`;
         }

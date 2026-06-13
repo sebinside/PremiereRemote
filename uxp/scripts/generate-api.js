@@ -71,9 +71,14 @@ for (const sourceFile of sourceFiles) {
         const required = new Set();
         for (const param of action.getParameters()) {
             const paramName = param.getName();
-            const paramType = param
+            const rawParamType = param
                 .getType()
                 .getText(undefined, TypeFormatFlags.NoTruncation);
+            // Strip optional union variants (e.g. "number | undefined" → "number")
+            const paramType = rawParamType
+                .replace(/\s*\|\s*(undefined|null)\s*/g, "")
+                .replace(/\s*(undefined|null)\s*\|\s*/g, "")
+                .trim();
 
             const knownType = {
                 string: "string",
@@ -82,7 +87,7 @@ for (const sourceFile of sourceFiles) {
             }[paramType];
             if (!knownType)
                 console.warn(
-                    `   ⚠️ Warning: unsupported parameter type "${paramType}", falling back to string`,
+                    `   ⚠️ Warning: unsupported parameter type "${rawParamType}", falling back to string`,
                 );
 
             const paramDoc = String(

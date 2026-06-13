@@ -8,15 +8,6 @@ import type { premierepro } from "../../internal/types.js";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars
 const ppro = require("premierepro") as premierepro;
-// TODO: Remove unused
-
-/**
- * Returns the name of the active sequence, i.e., the sequence that is currently visible in the timeline panel.
- * @returns The name of the active sequence or null if no sequence is active.
- */
-export async function getActiveSequenceName(): Promise<string | null> {
-    return "Dummy Sequence Name";
-}
 
 /**
  * Just a dummy function to demonstrate how to define an action with parameters. This function doesn't do anything useful, but it shows how you can define parameters for your actions.
