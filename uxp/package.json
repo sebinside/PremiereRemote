@@ -13,12 +13,14 @@
     "bundle": "esbuild src/internal/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",
     "generate-api": "node scripts/generate-api.js",
     "prepare-packaging": "rm -rf node_modules && pnpm install --prod && node scripts/prepare-packaging.js",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "format": "prettier --write src scripts"
+    "format": "prettier --write src scripts",
+    "check-format": "prettier --check src scripts",
+    "check-types": "tsc --noEmit",
+    "check-lint": "eslint src scripts"
   },
   "devDependencies": {
     "@adobe/premierepro": "^26.3.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.7.0",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",

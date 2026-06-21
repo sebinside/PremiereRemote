@@ -207,8 +207,14 @@ function buildArgs(
                 continue;
             }
             if (meta.type === "boolean") {
-                if (value === "true") { args.push(true); continue; }
-                if (value === "false") { args.push(false); continue; }
+                if (value === "true") {
+                    args.push(true);
+                    continue;
+                }
+                if (value === "false") {
+                    args.push(false);
+                    continue;
+                }
                 return `Parameter "${meta.name}" must be of type boolean, expected "true" or "false", got "${value}"`;
             }
         }
