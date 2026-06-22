@@ -1,10 +1,6 @@
-import { SourceType } from "./types.js";
-
-type StatusState = "ok" | "warn" | "error";
+import { SourceType, StatusState, Status, UIInterface } from "./types.js";
 
 const counts: Record<SourceType, number> = { ws: 0, http: 0, mcp: 0 };
-
-type Status = (typeof Statuses)[keyof typeof Statuses];
 export const Statuses = {
     NOT_LOADED: {
         state: "error" as StatusState,
@@ -73,6 +69,8 @@ function increaseCount(source: SourceType): void {
     const countElement = document.getElementById("count-" + source);
     if (countElement) countElement.textContent = formatCount(counts[source]);
 }
+
+export const ui: UIInterface = { setLastCommand, setStatus };
 
 function _setStatus(
     state: StatusState,

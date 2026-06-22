@@ -21,3 +21,16 @@ export type ResponseStatus =
     | "INTERNAL_ERROR";
 
 export type SourceType = "ws" | "http" | "mcp";
+
+export type StatusState = "ok" | "warn" | "error";
+
+export interface Status {
+    state: StatusState;
+    message: string;
+    detail: string;
+}
+
+export interface UIInterface {
+    setLastCommand(name: string, source: SourceType): void;
+    setStatus(status: Status): void;
+}
