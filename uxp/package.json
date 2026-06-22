@@ -16,7 +16,8 @@
     "format": "prettier --write src scripts",
     "check-format": "prettier --check src scripts",
     "check-types": "tsc --noEmit",
-    "check-lint": "eslint src scripts"
+    "check-lint": "eslint src scripts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@adobe/premierepro": "^26.3.0",
@@ -30,6 +31,7 @@
     "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
     "ts-morph": "^28.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
