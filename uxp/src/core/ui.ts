@@ -1,4 +1,4 @@
-import { SourceType } from "./config";
+import { SourceType } from "./types.js";
 
 type StatusState = "ok" | "warn" | "error";
 

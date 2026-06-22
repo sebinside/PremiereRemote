@@ -1,6 +1,9 @@
-import { registry, ParamMeta } from "../generated/registry.js";
-import { ResponseStatus, SourceType, WEBSOCKET_URL } from "./config.js";
+import { registry } from "../generated/registry.js";
+import { ParameterMetadata, ResponseStatus, SourceType } from "./types.js";
+import { WEBSOCKET_PORT } from "../user.config.js";
 import { setLastCommand, setStatus, Statuses } from "./ui.js";
+
+const WEBSOCKET_URL = `ws://localhost:${WEBSOCKET_PORT}`;
 
 interface IncomingMessage {
     id: string;
@@ -174,7 +177,7 @@ function parseIncomingMessage(
 
 function buildArgs(
     params: Record<string, unknown>,
-    paramMetas: ParamMeta[],
+    paramMetas: ParameterMetadata[],
 ): unknown[] | string {
     const knownParamNames = new Set(paramMetas.map((m) => m.name));
     const extraKeys = Object.keys(params).filter(

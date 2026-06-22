@@ -10,7 +10,7 @@
     "dev": "pnpm run setup && nodemon --watch src --ext ts --exec \"node scripts/generate-api.js && pnpm run bundle\"",
     "clean": "rm -rf build",
     "setup": "pnpm run clean && node scripts/generate-api.js && cp -r static/. build/",
-    "bundle": "esbuild src/internal/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",
+    "bundle": "esbuild src/core/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",
     "generate-api": "node scripts/generate-api.js",
     "prepare-packaging": "rm -rf node_modules && pnpm install --prod && node scripts/prepare-packaging.js",
     "format": "prettier --write src scripts",
