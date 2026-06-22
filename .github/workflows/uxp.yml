@@ -1,0 +1,49 @@
+name: UXP CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "uxp/**"
+  pull_request:
+    paths:
+      - "uxp/**"
+
+jobs:
+  ci:
+    name: UXP
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: uxp
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: uxp/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check formatting
+        run: pnpm run check-format
+
+      - name: Lint
+        run: pnpm run check-lint
+
+      - name: Type check
+        run: pnpm run check-types
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm run test
