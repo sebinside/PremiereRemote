@@ -50,7 +50,7 @@ export function generateApi({ actionsDir, openApiOutPath, registryOutPath }) {
                     f.isExported() && f.getJsDocs()[0]?.getDescription().trim(),
             );
         console.log(
-            `➡️ ${path.relative(actionsDir, sourceFile.getFilePath())}`,
+            `➡️  ${path.relative(actionsDir, sourceFile.getFilePath())}`,
         );
 
         for (const action of actions) {
