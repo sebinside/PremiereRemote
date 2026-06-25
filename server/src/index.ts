@@ -10,11 +10,12 @@ import { randomUUID } from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const HTTP_PORT = 8084;
+const HTTP_PORT = 8084; // TODO: Change to 42xxx ports
 const WS_PORT = 8085;
 const REQUEST_TIMEOUT_MS = 15_000;
 
 // ── Protocol types (mirror of wsClient.ts) ──────────────────────────────────
+// TODO: Either move to own file or to shared package
 
 interface IncomingMessage {
     id: string;
@@ -32,6 +33,8 @@ interface OutgoingMessage {
 
 // ── Pending request registry ─────────────────────────────────────────────────
 
+// Move together with ws server to the uxp communication module
+
 type PendingRequest = {
     resolve: (msg: OutgoingMessage) => void;
     timer: ReturnType<typeof setTimeout>;
@@ -48,6 +51,8 @@ function rejectAllPending(reason: string): void {
 }
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
+
+// extract as HTTP server (later one of three servers: HTTP, WebSocket, or MCP) to communicate with UXP plugin
 
 const app = express();
 app.use(express.json());
