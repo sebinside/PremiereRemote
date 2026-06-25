@@ -77,9 +77,9 @@ export class WsClient {
             };
         }
 
-        const actionArgsOrError = this.buildArgs(params, actionEntry.params);
-        if (typeof actionArgsOrError === "string") {
-            return { id, status: "INVALID_PARAMS", message: actionArgsOrError };
+        const [actionArgs, actionError] = this.buildArgs(params, actionEntry.params);
+        if (actionError) {
+            return { id, status: "INVALID_PARAMS", message: actionError };
         }
 
         if (
@@ -96,7 +96,7 @@ export class WsClient {
 
         try {
             this.ui.setLastCommand(actionEntry.fn.name, sourceType);
-            const result = await actionEntry.fn(...actionArgsOrError);
+            const result = await actionEntry.fn(...actionArgs);
             return { id, status: "OK", result: result ?? null };
         } catch (err) {
             console.error(
@@ -203,13 +203,13 @@ export class WsClient {
     private buildArgs(
         params: Record<string, unknown>,
         paramMetas: ParameterMetadata[],
-    ): unknown[] | string {
+    ): [unknown[], string | null] {
         const knownParamNames = new Set(paramMetas.map((m) => m.name));
         const extraKeys = Object.keys(params).filter(
             (k) => !knownParamNames.has(k),
         );
         if (extraKeys.length > 0) {
-            return `Unexpected parameter(s): ${extraKeys.join(", ")}`;
+            return [[], `Unexpected parameter(s): ${extraKeys.join(", ")}`];
         }
 
         const args: unknown[] = [];
@@ -218,7 +218,7 @@ export class WsClient {
 
             if (value === undefined || value === null) {
                 if (meta.required) {
-                    return `Missing required parameter: "${meta.name}"`;
+                    return [[], `Missing required parameter: "${meta.name}"`];
                 }
                 args.push(undefined);
                 continue;
@@ -229,7 +229,7 @@ export class WsClient {
                 if (meta.type === "number") {
                     const num = Number(value);
                     if (isNaN(num)) {
-                        return `Parameter "${meta.name}" must be of type number, got non-numeric string "${value}"`;
+                        return [[], `Parameter "${meta.name}" must be of type number, got non-numeric string "${value}"`];
                     }
                     args.push(num);
                     continue;
@@ -243,17 +243,17 @@ export class WsClient {
                         args.push(false);
                         continue;
                     }
-                    return `Parameter "${meta.name}" must be of type boolean, expected "true" or "false", got "${value}"`;
+                    return [[], `Parameter "${meta.name}" must be of type boolean, expected "true" or "false", got "${value}"`];
                 }
             }
 
             if (typeof value !== meta.type) {
-                return `Parameter "${meta.name}" must be of type ${meta.type}, got ${typeof value}`;
+                return [[], `Parameter "${meta.name}" must be of type ${meta.type}, got ${typeof value}`];
             }
 
             args.push(value);
         }
 
-        return args;
+        return [args, null];
     }
 }
