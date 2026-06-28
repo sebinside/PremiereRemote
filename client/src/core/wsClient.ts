@@ -18,7 +18,7 @@ interface IncomingMessage {
     params?: Record<string, unknown>;
 }
 
-export interface OutgoingMessage {
+interface OutgoingMessage {
     id: string;
     status: ResponseStatus;
     result?: unknown;
@@ -32,9 +32,11 @@ export class WsClient {
     constructor(
         private readonly registry: Registry,
         private readonly ui: UIInterface,
-    ) {}
+    ) {
+    }
 
     start(): void {
+        this.ui.reset();
         this.stopped = false;
         this.connect();
     }
@@ -77,7 +79,10 @@ export class WsClient {
             };
         }
 
-        const [actionArgs, actionError] = this.buildArgs(params, actionEntry.params);
+        const [actionArgs, actionError] = this.buildArgs(
+            params,
+            actionEntry.params,
+        );
         if (actionError) {
             return { id, status: "INVALID_PARAMS", message: actionError };
         }
@@ -100,7 +105,7 @@ export class WsClient {
             return { id, status: "OK", result: result ?? null };
         } catch (err) {
             console.error(
-                `Internal error while executing action "${actionId}":`,
+                `[core] Internal error while executing action "${actionId}":`,
                 err,
             );
             return {
@@ -117,7 +122,7 @@ export class WsClient {
         this.ws = new WebSocket(WEBSOCKET_URL);
 
         this.ws.addEventListener("open", () => {
-            console.log(`WebSocket client connected to ${WEBSOCKET_URL}`);
+            console.log(`[core] WebSocket client connected to ${WEBSOCKET_URL}`);
             this.ui.setStatus(Statuses.CONNECTED);
         });
 
@@ -127,19 +132,19 @@ export class WsClient {
                     if (response) this.send(response);
                 })
                 .catch((err) => {
-                    console.error("WebSocket client unhandled error:", err);
+                    console.error(`[core] WebSocket client unhandled error:`, err);
                 });
         });
 
         this.ws.addEventListener("close", () => {
             if (this.stopped) return;
-            console.warn(`No WebSocket connection. Reconnecting...`);
+            console.warn(`[core] No WebSocket connection. Reconnecting...`);
             this.ui.setStatus(Statuses.DISCONNECTED);
             this.scheduleReconnect();
         });
 
         this.ws.addEventListener("error", (event: Event) => {
-            console.error("WebSocket client error:", event);
+            console.error(`[core] WebSocket client error:`, event);
             this.ui.setStatus(Statuses.ERROR);
         });
     }
@@ -162,7 +167,7 @@ export class WsClient {
             parsed = JSON.parse(raw);
         } catch {
             console.error(
-                "WebSocket client failed to parse message as JSON:",
+                `[core] WebSocket client failed to parse message as JSON:`,
                 raw,
             );
             return null;
@@ -174,7 +179,7 @@ export class WsClient {
             Array.isArray(parsed)
         ) {
             console.error(
-                "WebSocket client message is not a JSON object:",
+                `[core] WebSocket client message is not a JSON object:`,
                 parsed,
             );
             return null;
@@ -192,7 +197,7 @@ export class WsClient {
             typeof msg.sourceType !== "string"
         ) {
             console.error(
-                "WebSocket client message missing required string fields 'id', 'actionId', and 'sourceType':",
+                `[core] WebSocket client message missing required string fields 'id', 'actionId', and 'sourceType':`,
                 msg,
             );
             return null;
@@ -229,7 +234,10 @@ export class WsClient {
                 if (meta.type === "number") {
                     const num = Number(value);
                     if (isNaN(num)) {
-                        return [[], `Parameter "${meta.name}" must be of type number, got non-numeric string "${value}"`];
+                        return [
+                            [],
+                            `Parameter "${meta.name}" must be of type number, got non-numeric string "${value}"`,
+                        ];
                     }
                     args.push(num);
                     continue;
@@ -243,12 +251,18 @@ export class WsClient {
                         args.push(false);
                         continue;
                     }
-                    return [[], `Parameter "${meta.name}" must be of type boolean, expected "true" or "false", got "${value}"`];
+                    return [
+                        [],
+                        `Parameter "${meta.name}" must be of type boolean, expected "true" or "false", got "${value}"`,
+                    ];
                 }
             }
 
             if (typeof value !== meta.type) {
-                return [[], `Parameter "${meta.name}" must be of type ${meta.type}, got ${typeof value}`];
+                return [
+                    [],
+                    `Parameter "${meta.name}" must be of type ${meta.type}, got ${typeof value}`,
+                ];
             }
 
             args.push(value);

@@ -33,4 +33,5 @@ export interface Status {
 export interface UIInterface {
     setLastCommand(name: string, source: SourceType): void;
     setStatus(status: Status): void;
+    reset(): void;
 }

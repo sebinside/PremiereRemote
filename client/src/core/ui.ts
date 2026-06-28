@@ -29,7 +29,17 @@ export const Statuses = {
     },
 } as const;
 
-export function setLastCommand(name: string, source: SourceType): void {
+export const ui: UIInterface = { setLastCommand, setStatus, reset };
+
+export function reset(): void {
+    for (const source of Object.keys(counts) as SourceType[]) {
+        setCount(source, 0);
+    }
+    setLastCommand("-", "http");
+    setStatus(Statuses.INITIALIZING);
+}
+
+function setLastCommand(name: string, source: SourceType): void {
     const nameElement = document.getElementById("last-command-name");
     const sourceElement = document.getElementById("last-command-source");
     if (nameElement) nameElement.textContent = name;
@@ -40,16 +50,13 @@ export function setLastCommand(name: string, source: SourceType): void {
     increaseCount(source);
 }
 
-export function setStatus(status: Status): void {
-    _setStatus(status.state, status.message, status.detail);
-}
-
-export function resetUI(): void {
-    for (const source of Object.keys(counts) as SourceType[]) {
-        setCount(source, 0);
-    }
-    setLastCommand("-", "http");
-    setStatus(Statuses.INITIALIZING);
+function setStatus(status: Status): void {
+    const dot = document.getElementById("status-dot");
+    const text = document.getElementById("status-text");
+    const icon = document.getElementById("status-info-icon");
+    if (dot) dot.className = "status-dot status-dot-" + status.state;
+    if (text) text.textContent = status.message;
+    if (icon) icon.setAttribute("title", status.detail || "");
 }
 
 function formatCount(n: number): string {
@@ -68,19 +75,4 @@ function increaseCount(source: SourceType): void {
     counts[source]++;
     const countElement = document.getElementById("count-" + source);
     if (countElement) countElement.textContent = formatCount(counts[source]);
-}
-
-export const ui: UIInterface = { setLastCommand, setStatus };
-
-function _setStatus(
-    state: StatusState,
-    message: string,
-    detail?: string,
-): void {
-    const dot = document.getElementById("status-dot");
-    const text = document.getElementById("status-text");
-    const icon = document.getElementById("status-info-icon");
-    if (dot) dot.className = "status-dot status-dot-" + state;
-    if (text) text.textContent = message;
-    if (icon) icon.setAttribute("title", detail || "");
 }

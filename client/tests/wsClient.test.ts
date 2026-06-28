@@ -3,7 +3,7 @@ import { WsClient } from "../src/core/wsClient.js";
 import type { Registry, UIInterface } from "../src/core/types.js";
 
 function mockUI(): UIInterface {
-    return { setLastCommand: vi.fn(), setStatus: vi.fn() };
+    return { setLastCommand: vi.fn(), setStatus: vi.fn(), reset: vi.fn()};
 }
 
 const registry: Registry = {
