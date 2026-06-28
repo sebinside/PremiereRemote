@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { WsClient } from "../src/core/wsClient.js";
 import type { Registry, UIInterface } from "../src/core/types.js";
 
 function mockUI(): UIInterface {
-    return { setLastCommand: vi.fn(), setStatus: vi.fn(), reset: vi.fn()};
+    return { setLastCommand: vi.fn(), setStatus: vi.fn(), reset: vi.fn() };
 }
 
 const registry: Registry = {
@@ -25,9 +25,13 @@ const registry: Registry = {
         fn: async (...args) => args[0] ?? "default",
         params: [{ name: "value", type: "string", required: false }],
     },
-    "test/double": {
+    "test/number": {
         fn: async (...args) => (args[0] as number) * 2,
         params: [{ name: "n", type: "number", required: true }],
+    },
+    "test/bool": {
+        fn: async (...args) => args[0],
+        params: [{ name: "flag", type: "boolean", required: true }],
     },
 };
 
@@ -49,14 +53,22 @@ describe("WsClient.handleMessage", () => {
     describe("success cases", () => {
         it("returns OK with result for a valid message", async () => {
             const response = await client().handleMessage(msg());
-            expect(response).toEqual({ id: "1", status: "OK", result: "hello" });
+            expect(response).toEqual({
+                id: "1",
+                status: "OK",
+                result: "hello",
+            });
         });
 
         it("returns OK for action with no parameters", async () => {
             const response = await client().handleMessage(
                 msg({ actionId: "test/noparams", params: {} }),
             );
-            expect(response).toEqual({ id: "1", status: "OK", result: "result" });
+            expect(response).toEqual({
+                id: "1",
+                status: "OK",
+                result: "result",
+            });
         });
 
         it("returns OK when optional parameter is omitted", async () => {
@@ -69,7 +81,11 @@ describe("WsClient.handleMessage", () => {
 
         it("coerces string to number for HTTP query params", async () => {
             const response = await client().handleMessage(
-                msg({ actionId: "test/double", sourceType: "http", params: { n: "21" } }),
+                msg({
+                    actionId: "test/number",
+                    sourceType: "http",
+                    params: { n: "21" },
+                }),
             );
             expect(response?.status).toBe("OK");
             expect(response?.result).toBe(42);
@@ -81,6 +97,63 @@ describe("WsClient.handleMessage", () => {
                 msg({ actionId: "test/noparams", params: {} }),
             );
             expect(ui.setLastCommand).toHaveBeenCalledWith("fn", "ws");
+        });
+
+        it("propagates sourceType to ui.setLastCommand", async () => {
+            const ui = mockUI();
+            await new WsClient(registry, ui).handleMessage(
+                msg({
+                    actionId: "test/noparams",
+                    params: {},
+                    sourceType: "http",
+                }),
+            );
+            expect(ui.setLastCommand).toHaveBeenCalledWith("fn", "http");
+        });
+
+        it("returns OK for mcp sourceType", async () => {
+            const response = await client().handleMessage(
+                msg({
+                    actionId: "test/noparams",
+                    params: {},
+                    sourceType: "mcp",
+                }),
+            );
+            expect(response?.status).toBe("OK");
+        });
+
+        it("returns result: null for void-returning actions", async () => {
+            const voidRegistry: Registry = {
+                "test/void": { fn: async () => undefined, params: [] },
+            };
+            const response = await new WsClient(
+                voidRegistry,
+                mockUI(),
+            ).handleMessage(msg({ actionId: "test/void", params: {} }));
+            expect(response?.status).toBe("OK");
+            expect(response?.result).toBeNull();
+        });
+
+        it('coerces "true" and "false" strings to boolean', async () => {
+            const trueResponse = await client().handleMessage(
+                msg({
+                    actionId: "test/bool",
+                    sourceType: "http",
+                    params: { flag: "true" },
+                }),
+            );
+            expect(trueResponse?.status).toBe("OK");
+            expect(trueResponse?.result).toBe(true);
+
+            const falseResponse = await client().handleMessage(
+                msg({
+                    actionId: "test/bool",
+                    sourceType: "http",
+                    params: { flag: "false" },
+                }),
+            );
+            expect(falseResponse?.status).toBe("OK");
+            expect(falseResponse?.result).toBe(false);
         });
     });
 
@@ -96,9 +169,7 @@ describe("WsClient.handleMessage", () => {
 
     describe("INVALID_PARAMS", () => {
         it("returns INVALID_PARAMS for a missing required parameter", async () => {
-            const response = await client().handleMessage(
-                msg({ params: {} }),
-            );
+            const response = await client().handleMessage(msg({ params: {} }));
             expect(response?.status).toBe("INVALID_PARAMS");
             expect(response?.message).toContain("value");
         });
@@ -127,20 +198,29 @@ describe("WsClient.handleMessage", () => {
 
         it("returns INVALID_PARAMS when a string cannot be coerced to number", async () => {
             const response = await client().handleMessage(
-                msg({ actionId: "test/double", params: { n: "notanumber" } }),
+                msg({ actionId: "test/number", params: { n: "notanumber" } }),
             );
             expect(response?.status).toBe("INVALID_PARAMS");
         });
 
         it("returns INVALID_PARAMS when a boolean coercion fails", async () => {
-            const boolRegistry: Registry = {
-                "test/bool": {
-                    fn: async (...args) => args[0],
-                    params: [{ name: "flag", type: "boolean", required: true }],
-                },
-            };
-            const response = await new WsClient(boolRegistry, mockUI()).handleMessage(
+            const response = await client().handleMessage(
                 msg({ actionId: "test/bool", params: { flag: "maybe" } }),
+            );
+            expect(response?.status).toBe("INVALID_PARAMS");
+        });
+
+        it("returns INVALID_PARAMS when a required parameter is null", async () => {
+            const response = await client().handleMessage(
+                msg({ params: { value: null } }),
+            );
+            expect(response?.status).toBe("INVALID_PARAMS");
+            expect(response?.message).toContain("value");
+        });
+
+        it("returns INVALID_PARAMS when a parameter has the wrong type", async () => {
+            const response = await client().handleMessage(
+                msg({ params: { value: 42 } }),
             );
             expect(response?.status).toBe("INVALID_PARAMS");
         });

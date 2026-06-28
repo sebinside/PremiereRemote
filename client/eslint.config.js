@@ -37,4 +37,17 @@ export default [
             ...prettier.rules,
         },
     },
+    {
+        files: ["tests/**/*.ts"],
+        languageOptions: {
+            parser: tsparser,
+        },
+        plugins: {
+            "@typescript-eslint": tseslint,
+        },
+        rules: {
+            ...tseslint.configs.recommended.rules,
+            ...prettier.rules,
+        },
+    },
 ];

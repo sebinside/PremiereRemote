@@ -13,10 +13,10 @@
     "bundle": "esbuild src/core/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",
     "generate-api": "node scripts/generate-api.js",
     "prepare-packaging": "rm -rf node_modules && pnpm install --prod && node scripts/prepare-packaging.js",
-    "format": "prettier --write src scripts",
-    "check-format": "prettier --check src scripts",
+    "format": "prettier --write src scripts tests",
+    "check-format": "prettier --check src scripts tests",
     "check-types": "tsc --noEmit",
-    "check-lint": "eslint src scripts",
+    "check-lint": "eslint src scripts tests",
     "test": "vitest run"
   },
   "devDependencies": {

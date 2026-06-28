@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * A simple action with no parameters.
  * @returns A greeting string.
@@ -12,7 +13,11 @@ export async function greet(): Promise<string> {
  * @param times How many times to repeat.
  * @param loud Whether to capitalize the output.
  */
-export async function repeatGreeting(name: string, times: number, loud: boolean): Promise<void> {
+export async function repeatGreeting(
+    name: string,
+    times: number,
+    loud: boolean,
+): Promise<void> {
     console.log(name, times, loud);
 }
 

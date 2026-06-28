@@ -16,10 +16,16 @@ describe("generateApi", () => {
     let openApiOutPath: string;
 
     beforeAll(() => {
-        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "premiere-remote-test-"));
+        tmpDir = fs.mkdtempSync(
+            path.join(os.tmpdir(), "premiere-remote-test-"),
+        );
         registryOutPath = path.join(tmpDir, "registry.ts");
         openApiOutPath = path.join(tmpDir, "openapi.json");
-        generateApi({ actionsDir: fixturesDir, openApiOutPath, registryOutPath });
+        generateApi({
+            actionsDir: fixturesDir,
+            openApiOutPath,
+            registryOutPath,
+        });
     });
 
     afterAll(() => {
@@ -43,13 +49,21 @@ describe("generateApi", () => {
         });
 
         it("generates correct parameter metadata", () => {
-            expect(registry).toContain('name: "name", type: "string", required: true');
-            expect(registry).toContain('name: "times", type: "number", required: true');
-            expect(registry).toContain('name: "loud", type: "boolean", required: true');
+            expect(registry).toContain(
+                'name: "name", type: "string", required: true',
+            );
+            expect(registry).toContain(
+                'name: "times", type: "number", required: true',
+            );
+            expect(registry).toContain(
+                'name: "loud", type: "boolean", required: true',
+            );
         });
 
         it("generates empty params for actions with no parameters", () => {
-            expect(registry).toContain('"fixture/greet": {\n        fn: fixture__greet,\n        params: [],\n    }');
+            expect(registry).toContain(
+                '"fixture/greet": {\n        fn: fixture__greet,\n        params: [],\n    }',
+            );
         });
 
         it("adds the auto-generated header comment", () => {
@@ -62,7 +76,9 @@ describe("generateApi", () => {
         });
 
         it("maps optional parameters to required: false", () => {
-            expect(registry).toContain('name: "label", type: "string", required: false');
+            expect(registry).toContain(
+                'name: "label", type: "string", required: false',
+            );
         });
 
         it('falls back to "string" for unsupported parameter types', () => {
@@ -75,6 +91,7 @@ describe("generateApi", () => {
     });
 
     describe("openapi.json", () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let openApi: any;
 
         beforeAll(() => {
@@ -91,7 +108,8 @@ describe("generateApi", () => {
         });
 
         it("includes query parameters for actions with parameters", () => {
-            const params = openApi.paths["/fixture/repeatGreeting"].get.parameters;
+            const params =
+                openApi.paths["/fixture/repeatGreeting"].get.parameters;
             expect(params).toHaveLength(3);
             expect(params[0].name).toBe("name");
             expect(params[0].schema.type).toBe("string");
@@ -111,14 +129,16 @@ describe("generateApi", () => {
         });
 
         it("marks optional parameters as not required", () => {
-            const params = openApi.paths["/fixture/optionalParam"].get.parameters;
+            const params =
+                openApi.paths["/fixture/optionalParam"].get.parameters;
             expect(params).toHaveLength(1);
             expect(params[0].name).toBe("label");
             expect(params[0].required).toBe(false);
         });
 
         it('falls back to "string" schema type for unsupported parameter types', () => {
-            const params = openApi.paths["/fixture/unsupportedParamType"].get.parameters;
+            const params =
+                openApi.paths["/fixture/unsupportedParamType"].get.parameters;
             expect(params[0].schema.type).toBe("string");
         });
 
@@ -128,30 +148,48 @@ describe("generateApi", () => {
         });
 
         it("generates correct response schemas for non-void return types", () => {
-            expect(openApi.paths["/fixture/returnsNumber"].get.responses["200"].content["application/json"].schema.type).toBe("number");
-            expect(openApi.paths["/fixture/returnsBoolean"].get.responses["200"].content["application/json"].schema.type).toBe("boolean");
-            expect(openApi.paths["/fixture/returnsArray"].get.responses["200"].content["application/json"].schema.type).toBe("array");
-            expect(openApi.paths["/fixture/returnsObject"].get.responses["200"].content["application/json"].schema.type).toBe("object");
+            expect(
+                openApi.paths["/fixture/returnsNumber"].get.responses["200"]
+                    .content["application/json"].schema.type,
+            ).toBe("number");
+            expect(
+                openApi.paths["/fixture/returnsBoolean"].get.responses["200"]
+                    .content["application/json"].schema.type,
+            ).toBe("boolean");
+            expect(
+                openApi.paths["/fixture/returnsArray"].get.responses["200"]
+                    .content["application/json"].schema.type,
+            ).toBe("array");
+            expect(
+                openApi.paths["/fixture/returnsObject"].get.responses["200"]
+                    .content["application/json"].schema.type,
+            ).toBe("object");
         });
 
         it("omits response content for void-return actions", () => {
-            const response200 = openApi.paths["/fixture/repeatGreeting"].get.responses["200"];
+            const response200 =
+                openApi.paths["/fixture/repeatGreeting"].get.responses["200"];
             expect(response200.content).toBeUndefined();
         });
 
         it("includes @param description in OpenAPI parameter", () => {
-            const params = openApi.paths["/fixture/repeatGreeting"].get.parameters;
-            const nameParam = params.find((p: { name: string }) => p.name === "name");
+            const params =
+                openApi.paths["/fixture/repeatGreeting"].get.parameters;
+            const nameParam = params.find(
+                (p: { name: string }) => p.name === "name",
+            );
             expect(nameParam.description).toBe("The person's name.");
         });
 
         it("omits description field when @param description is missing", () => {
-            const params = openApi.paths["/fixture/undocumentedParam"].get.parameters;
+            const params =
+                openApi.paths["/fixture/undocumentedParam"].get.parameters;
             expect(params[0].description).toBeUndefined();
         });
 
         it("uses @returns description as the 200 response description", () => {
-            const response200 = openApi.paths["/fixture/greet"].get.responses["200"];
+            const response200 =
+                openApi.paths["/fixture/greet"].get.responses["200"];
             expect(response200.description).toBe("A greeting string.");
         });
     });
