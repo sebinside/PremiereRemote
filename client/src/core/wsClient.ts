@@ -32,8 +32,7 @@ export class WsClient {
     constructor(
         private readonly registry: Registry,
         private readonly ui: UIInterface,
-    ) {
-    }
+    ) {}
 
     start(): void {
         this.ui.reset();
@@ -117,7 +116,9 @@ export class WsClient {
         this.ws = new WebSocket(WEBSOCKET_URL);
 
         this.ws.addEventListener("open", () => {
-            console.log(`[core] WebSocket client connected to ${WEBSOCKET_URL}`);
+            console.log(
+                `[core] WebSocket client connected to ${WEBSOCKET_URL}`,
+            );
             this.ui.setStatus(Statuses.CONNECTED);
         });
 
@@ -127,7 +128,10 @@ export class WsClient {
                     if (response) this.send(response);
                 })
                 .catch((err) => {
-                    console.error(`[core] WebSocket client unhandled error:`, err);
+                    console.error(
+                        `[core] WebSocket client unhandled error:`,
+                        err,
+                    );
                 });
         });
 

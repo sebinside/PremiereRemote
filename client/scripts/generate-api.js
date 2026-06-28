@@ -8,6 +8,19 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
+// Entry point when run as a script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
+    generateApi({
+        actionsDir: path.resolve(scriptsDir, "../src/actions"),
+        openApiOutPath: path.resolve(scriptsDir, "../../server/openapi.json"),
+        registryOutPath: path.resolve(
+            scriptsDir,
+            "../src/generated/registry.ts",
+        ),
+    });
+}
+
 export function generateApi({ actionsDir, openApiOutPath, registryOutPath }) {
     const scriptsDirectoryName = path.dirname(fileURLToPath(import.meta.url));
     const { version } = JSON.parse(
@@ -32,179 +45,15 @@ export function generateApi({ actionsDir, openApiOutPath, registryOutPath }) {
     const tags = new Set();
 
     for (const sourceFile of sourceFiles) {
-        const namespace = path
-            .relative(actionsDir, sourceFile.getFilePath())
-            .replace(/\\/g, "/")
-            .replace(/\.ts$/, "");
-        const namespaceAlias = namespace.replace(/\//g, "__");
-        const importPath = path
-            .relative(path.dirname(registryOutPath), sourceFile.getFilePath())
-            .replace(/\\/g, "/")
-            .replace(/\.ts$/, ".js");
-
-        // Actions, provided by the API, are exported functions with a non-empty JSDoc description.
-        const actions = sourceFile
-            .getFunctions()
-            .filter(
-                (f) =>
-                    f.isExported() && f.getJsDocs()[0]?.getDescription().trim(),
-            );
-        console.log(
-            `➡️  ${path.relative(actionsDir, sourceFile.getFilePath())}`,
-        );
-
-        for (const action of actions) {
-            const hasParams = action.getParameters().length > 0;
-            const name = action.getName();
-            console.log(`   • ${name}(${hasParams ? "..." : ""})`);
-            actionCount++;
-
-            const jsDoc = action.getJsDocs()[0];
-            const descriptionDoc = jsDoc.getDescription().trim();
-            const returnsDoc = String(
-                jsDoc
-                    .getTags()
-                    .find((t) => ["returns", "return"].includes(t.getTagName()))
-                    ?.getComment() ?? "",
-            ).trim();
-
-            const properties = {};
-            const required = new Set();
-            for (const param of action.getParameters()) {
-                const paramName = param.getName();
-                const rawParamType = param
-                    .getType()
-                    .getText(undefined, TypeFormatFlags.NoTruncation);
-                // Strip optional union variants (e.g. "number | undefined" → "number")
-                const paramType = rawParamType
-                    .replace(/\s*\|\s*(undefined|null)\s*/g, "")
-                    .replace(/\s*(undefined|null)\s*\|\s*/g, "")
-                    .trim();
-
-                const knownType = {
-                    string: "string",
-                    number: "number",
-                    boolean: "boolean",
-                }[paramType];
-                if (!knownType)
-                    console.warn(
-                        `   ⚠️ Warning: unsupported parameter type "${rawParamType}", falling back to string`,
-                    );
-
-                const paramDoc = String(
-                    jsDoc
-                        .getTags()
-                        .find(
-                            (t) =>
-                                t.getTagName() === "param" &&
-                                t.getName() === paramName,
-                        )
-                        ?.getComment() ?? "",
-                ).trim();
-                if (!paramDoc)
-                    console.warn(
-                        `   ⚠️ Warning: missing @param description for "${paramName}", parameter description will be empty`,
-                    );
-
-                properties[paramName] = {
-                    type: knownType ?? "string",
-                    ...(paramDoc ? { description: paramDoc } : {}),
-                };
-                if (!param.isOptional()) required.add(paramName);
-            }
-
-            const returnType = action
-                .getReturnType()
-                .getText(undefined, TypeFormatFlags.NoTruncation);
-            const unwrappedReturn = (
-                returnType.match(/^Promise<(.+)>$/s)?.[1] ?? returnType
-            )
-                .replace(/\s*\|\s*(null|undefined)\s*/g, "")
-                .trim();
-            let returnSchema;
-            switch (unwrappedReturn) {
-                case "void":
-                    returnSchema = null;
-                    break;
-                case "string":
-                    returnSchema = { type: "string" };
-                    break;
-                case "number":
-                    returnSchema = { type: "number" };
-                    break;
-                case "boolean":
-                    returnSchema = { type: "boolean" };
-                    break;
-                default:
-                    returnSchema = unwrappedReturn.endsWith("[]")
-                        ? { type: "array" }
-                        : { type: "object" };
-            }
-
-            if (!returnsDoc && unwrappedReturn !== "void")
-                console.warn(
-                    `   ⚠️ Warning: missing @returns JSDoc, response description will be empty`,
-                );
-
-            tags.add(namespace);
-            openApiPaths[`/${namespace}/${name}`] = {
-                get: {
-                    summary: descriptionDoc,
-                    operationId: `${namespace}/${name}`,
-                    tags: [namespace],
-                    parameters: Object.entries(properties).map(
-                        ([
-                            paramName,
-                            { description: paramDesc, ...schema },
-                        ]) => ({
-                            name: paramName,
-                            in: "query",
-                            required: required.has(paramName),
-                            ...(paramDesc ? { description: paramDesc } : {}),
-                            schema,
-                        }),
-                    ),
-                    responses: {
-                        200: {
-                            description: returnsDoc || "Success",
-                            ...(returnSchema
-                                ? {
-                                      content: {
-                                          "application/json": {
-                                              schema: returnSchema,
-                                          },
-                                      },
-                                  }
-                                : {}),
-                        },
-                        500: {
-                            description: "Internal error",
-                            content: {
-                                "application/json": {
-                                    schema: {
-                                        type: "object",
-                                        properties: {
-                                            error: { type: "string" },
-                                        },
-                                        required: ["error"],
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            };
-
-            registryImports += `import { ${name} as ${namespaceAlias}__${name} } from "${importPath}";\n`;
-
-            const paramMetaItems = Object.entries(properties)
-                .map(
-                    ([pName, { type: pType }]) =>
-                        `            { name: "${pName}", type: "${pType}", required: ${required.has(pName)} }`,
-                )
-                .join(",\n");
-            registryEntries += `    "${namespace}/${name}": {\n        fn: ${namespaceAlias}__${name},\n        params: [${paramMetaItems ? `\n${paramMetaItems}\n        ` : ""}],\n    },\n`;
-        }
+        const result = processSourceFile(sourceFile, {
+            actionsDir,
+            registryOutPath,
+        });
+        if (result.actionCount > 0) tags.add(result.namespace);
+        Object.assign(openApiPaths, result.openApiPaths);
+        registryImports += result.importLines;
+        registryEntries += result.registryEntries;
+        actionCount += result.actionCount;
     }
 
     const openApiDoc = {
@@ -222,7 +71,6 @@ export function generateApi({ actionsDir, openApiOutPath, registryOutPath }) {
     fs.mkdirSync(path.dirname(registryOutPath), { recursive: true });
 
     fs.writeFileSync(openApiOutPath, JSON.stringify(openApiDoc, null, 2));
-
     fs.writeFileSync(
         registryOutPath,
         registryImports +
@@ -234,14 +82,236 @@ export function generateApi({ actionsDir, openApiOutPath, registryOutPath }) {
     );
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
-    generateApi({
-        actionsDir: path.resolve(scriptsDir, "../src/actions"),
-        openApiOutPath: path.resolve(scriptsDir, "../../server/openapi.json"),
-        registryOutPath: path.resolve(
-            scriptsDir,
-            "../src/generated/registry.ts",
-        ),
+function processSourceFile(sourceFile, { actionsDir, registryOutPath }) {
+    const namespace = path
+        .relative(actionsDir, sourceFile.getFilePath())
+        .replace(/\\/g, "/")
+        .replace(/\.ts$/, "");
+    const namespaceAlias = namespace.replace(/\//g, "__");
+    const importPath = path
+        .relative(path.dirname(registryOutPath), sourceFile.getFilePath())
+        .replace(/\\/g, "/")
+        .replace(/\.ts$/, ".js");
+
+    // Actions, provided by the API, are exported functions with a non-empty JSDoc description.
+    const actions = sourceFile
+        .getFunctions()
+        .filter(
+            (f) => f.isExported() && f.getJsDocs()[0]?.getDescription().trim(),
+        );
+    console.log(`➡️  ${path.relative(actionsDir, sourceFile.getFilePath())}`);
+
+    const openApiPaths = {};
+    let importLines = "";
+    let registryEntries = "";
+
+    for (const action of actions) {
+        const { openApiPath, operation, importLine, registryEntry } =
+            processAction(action, { namespace, namespaceAlias, importPath });
+        openApiPaths[openApiPath] = operation;
+        importLines += importLine;
+        registryEntries += registryEntry;
+    }
+
+    return {
+        namespace,
+        openApiPaths,
+        importLines,
+        registryEntries,
+        actionCount: actions.length,
+    };
+}
+
+function processAction(action, { namespace, namespaceAlias, importPath }) {
+    const name = action.getName();
+    console.log(
+        `   • ${name}(${action.getParameters().length > 0 ? "..." : ""})`,
+    );
+
+    const jsDoc = action.getJsDocs()[0];
+    const descriptionDoc = jsDoc.getDescription().trim();
+    const { properties, required } = extractParams(action, jsDoc);
+    const { schema: returnSchema, returnsDoc } = getReturnInfo(action, jsDoc);
+
+    const operation = buildOpenApiOperation({
+        name,
+        namespace,
+        descriptionDoc,
+        returnsDoc,
+        properties,
+        required,
+        returnSchema,
     });
+    const { importLine, entry: registryEntry } = buildRegistryEntry({
+        name,
+        namespace,
+        namespaceAlias,
+        importPath,
+        properties,
+        required,
+    });
+
+    return {
+        openApiPath: `/${namespace}/${name}`,
+        operation,
+        importLine,
+        registryEntry,
+    };
+}
+
+function resolveParamType(param) {
+    const rawType = param
+        .getType()
+        .getText(undefined, TypeFormatFlags.NoTruncation);
+    const stripped = rawType
+        .replace(/\s*\|\s*(undefined|null)\s*/g, "")
+        .replace(/\s*(undefined|null)\s*\|\s*/g, "")
+        .trim();
+    const knownType = {
+        string: "string",
+        number: "number",
+        boolean: "boolean",
+    }[stripped];
+    if (!knownType)
+        console.warn(
+            `   ⚠️ Warning: unsupported parameter type "${rawType}", falling back to string`,
+        );
+    return knownType ?? "string";
+}
+
+function extractParams(action, jsDoc) {
+    const properties = {};
+    const required = new Set();
+    for (const param of action.getParameters()) {
+        const paramName = param.getName();
+        const type = resolveParamType(param);
+        const paramDoc = String(
+            jsDoc
+                .getTags()
+                .find(
+                    (t) =>
+                        t.getTagName() === "param" && t.getName() === paramName,
+                )
+                ?.getComment() ?? "",
+        ).trim();
+        if (!paramDoc)
+            console.warn(
+                `   ⚠️ Warning: missing @param description for "${paramName}", parameter description will be empty`,
+            );
+        properties[paramName] = {
+            type,
+            ...(paramDoc ? { description: paramDoc } : {}),
+        };
+        if (!param.isOptional()) required.add(paramName);
+    }
+    return { properties, required };
+}
+
+function getReturnInfo(action, jsDoc) {
+    const returnType = action
+        .getReturnType()
+        .getText(undefined, TypeFormatFlags.NoTruncation);
+    const unwrapped = (returnType.match(/^Promise<(.+)>$/s)?.[1] ?? returnType)
+        .replace(/\s*\|\s*(null|undefined)\s*/g, "")
+        .trim();
+    const returnsDoc = String(
+        jsDoc
+            .getTags()
+            .find((t) => ["returns", "return"].includes(t.getTagName()))
+            ?.getComment() ?? "",
+    ).trim();
+    if (!returnsDoc && unwrapped !== "void")
+        console.warn(
+            `   ⚠️ Warning: missing @returns JSDoc, response description will be empty`,
+        );
+    let schema;
+    switch (unwrapped) {
+        case "void":
+            schema = null;
+            break;
+        case "string":
+            schema = { type: "string" };
+            break;
+        case "number":
+            schema = { type: "number" };
+            break;
+        case "boolean":
+            schema = { type: "boolean" };
+            break;
+        default:
+            schema = unwrapped.endsWith("[]")
+                ? { type: "array" }
+                : { type: "object" };
+    }
+    return { schema, returnsDoc };
+}
+
+function buildOpenApiOperation({
+    name,
+    namespace,
+    descriptionDoc,
+    returnsDoc,
+    properties,
+    required,
+    returnSchema,
+}) {
+    return {
+        get: {
+            summary: descriptionDoc,
+            operationId: `${namespace}/${name}`,
+            tags: [namespace],
+            parameters: Object.entries(properties).map(
+                ([paramName, { description: paramDesc, ...schema }]) => ({
+                    name: paramName,
+                    in: "query",
+                    required: required.has(paramName),
+                    ...(paramDesc ? { description: paramDesc } : {}),
+                    schema,
+                }),
+            ),
+            responses: {
+                200: {
+                    description: returnsDoc || "Success",
+                    ...(returnSchema
+                        ? {
+                              content: {
+                                  "application/json": { schema: returnSchema },
+                              },
+                          }
+                        : {}),
+                },
+                500: {
+                    description: "Internal error",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: { error: { type: "string" } },
+                                required: ["error"],
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
+}
+
+function buildRegistryEntry({
+    name,
+    namespace,
+    namespaceAlias,
+    importPath,
+    properties,
+    required,
+}) {
+    const importLine = `import { ${name} as ${namespaceAlias}__${name} } from "${importPath}";\n`;
+    const paramMetaItems = Object.entries(properties)
+        .map(
+            ([pName, { type: pType }]) =>
+                `            { name: "${pName}", type: "${pType}", required: ${required.has(pName)} }`,
+        )
+        .join(",\n");
+    const entry = `    "${namespace}/${name}": {\n        fn: ${namespaceAlias}__${name},\n        params: [${paramMetaItems ? `\n${paramMetaItems}\n        ` : ""}],\n    },\n`;
+    return { importLine, entry };
 }
