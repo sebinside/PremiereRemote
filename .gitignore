@@ -2,8 +2,8 @@
 .pnpm-store/
 node_modules/
 
-uxp/build/
-uxp/src/generated/
+client/build/
+client/src/generated/
 
 server/openapi.json
 server/dist

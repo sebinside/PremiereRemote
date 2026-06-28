@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm run setup && pnpm run bundle",
-    "dev": "pnpm run setup && nodemon --watch src --ignore src/generated --ext ts --exec \"node scripts/generate-api.js && pnpm run bundle\"",
+    "dev": "pnpm run clean && cp -r static/. build/ && nodemon --watch src --ignore src/generated --ext ts --exec \"node scripts/generate-api.js && pnpm run bundle\"",
     "clean": "rm -rf build",
     "setup": "pnpm run clean && node scripts/generate-api.js && cp -r static/. build/",
     "bundle": "esbuild src/core/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",

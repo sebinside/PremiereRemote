@@ -3,13 +3,13 @@ FROM node:lts-alpine AS api-gen
 RUN corepack enable
 WORKDIR /app
 
-COPY uxp/package.json uxp/pnpm-lock.yaml uxp/pnpm-workspace.yaml ./uxp/
-RUN cd uxp && pnpm install --frozen-lockfile
+COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml ./client/
+RUN cd client && pnpm install --frozen-lockfile
 
 
-COPY uxp/scripts/generate-api.js ./uxp/scripts/
-COPY uxp/src/actions/ ./uxp/src/actions/
-RUN cd uxp && node scripts/generate-api.js
+COPY client/scripts/generate-api.js ./client/scripts/
+COPY client/src/actions/ ./client/src/actions/
+RUN cd client && node scripts/generate-api.js
 
 # 2. Copy openapi.json to build the server image
 FROM node:lts-alpine AS builder

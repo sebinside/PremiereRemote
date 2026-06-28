@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Prepare UXP plugin
-cd uxp
+cd client
 pnpm install -y
 
 # Prepare server

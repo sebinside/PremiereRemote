@@ -1,21 +1,21 @@
-name: UXP CI
+name: UXP Client CI
 
 on:
   push:
     branches: [main]
     paths:
-      - "uxp/**"
+      - "client/**"
   pull_request:
     paths:
-      - "uxp/**"
+      - "client/**"
 
 jobs:
   ci:
-    name: UXP
+    name: UXP Client
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: uxp
+        working-directory: client
 
     steps:
       - uses: actions/checkout@v7
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: uxp/pnpm-lock.yaml
+          cache-dependency-path: client/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install

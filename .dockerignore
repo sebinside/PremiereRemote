@@ -1,7 +1,7 @@
 .git/
 
-uxp/node_modules/
-uxp/build/
+client/node_modules/
+client/build/
 
 server/node_modules/
 server/dist/

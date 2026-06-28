@@ -10,9 +10,11 @@
     "dev": "nodemon --watch src --ext ts --exec \"tsc && node dist/index.js\"",
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "check-format": "prettier --check src",
+    "check-types": "tsc --noEmit",
+    "check-lint": "eslint src",
+    "test": "vitest run"
   },
   "dependencies": {
     "express": "^5.2.1",
