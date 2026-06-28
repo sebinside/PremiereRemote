@@ -10,7 +10,7 @@ import { randomUUID } from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const HTTP_PORT = 8084; // TODO: Change to 42xxx ports
+const HTTP_PORT = 8084; // TODO: Change to 4240x ports
 const WS_PORT = 8085;
 const REQUEST_TIMEOUT_MS = 15_000;
 

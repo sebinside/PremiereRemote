@@ -41,11 +41,6 @@ export class WsClient {
         this.connect();
     }
 
-    stop(): void {
-        this.stopped = true;
-        this.ws?.close();
-    }
-
     async handleMessage(raw: string): Promise<OutgoingMessage | null> {
         const rawMessage = this.parseRawMessage(raw);
         if (!rawMessage) return null;
