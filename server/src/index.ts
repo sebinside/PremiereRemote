@@ -10,8 +10,8 @@ import { randomUUID } from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const HTTP_PORT = 8084; // TODO: Change to 4240x ports
-const WS_PORT = 8085;
+const HTTP_PORT = 42400;
+const WS_PORT = 42401;
 const REQUEST_TIMEOUT_MS = 15_000;
 
 // ── Protocol types (mirror of wsClient.ts) ──────────────────────────────────

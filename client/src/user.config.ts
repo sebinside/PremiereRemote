@@ -3,4 +3,4 @@
  * Edit this file to change settings without touching the core plugin code.
  */
 
-export const WEBSOCKET_PORT = 8085;
+export const WEBSOCKET_PORT = 42401;

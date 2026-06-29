@@ -4,4 +4,4 @@ RUN npm install -g pnpm@latest
 
 USER node
 WORKDIR /workspaces/PremiereRemote
-EXPOSE 8084
+EXPOSE 42400

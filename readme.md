@@ -12,7 +12,7 @@ Simply run the server using docker:
 
 ```bash
 docker build -t premiere-remote .
-docker run -p 8085:8085 -p 8084:8084 premiere-remote
+docker run -p 42401:42401 -p 42400:42400 premiere-remote
 ```
 
 or using docker compose:

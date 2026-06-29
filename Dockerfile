@@ -40,9 +40,9 @@ COPY --from=builder /app/dist ./dist/
 COPY --from=api-gen /app/server/openapi.json ./openapi.json
 
 # HTTP API
-EXPOSE 8084
+EXPOSE 42400
 # WebSocket (UXP plugin)
-EXPOSE 8085
+EXPOSE 42401
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/index.js"]

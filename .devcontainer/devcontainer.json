@@ -4,7 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "postCreateCommand": ".devcontainer/post-install.sh",
-  "forwardPorts": [8084],
+  "forwardPorts": [42400],
   "customizations": {
     "vscode": {
       "extensions": [
