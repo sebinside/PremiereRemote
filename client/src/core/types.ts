@@ -14,12 +14,6 @@ export interface RegistryEntry {
 
 export type Registry = Record<string, RegistryEntry>;
 
-export type ResponseStatus =
-    | "OK"
-    | "NOT_FOUND"
-    | "INVALID_PARAMS"
-    | "INTERNAL_ERROR";
-
 export type SourceType = "ws" | "http" | "mcp";
 
 export type StatusState = "ok" | "warn" | "error";

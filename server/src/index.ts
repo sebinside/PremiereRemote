@@ -7,29 +7,13 @@ import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
+import type { IncomingMessage, OutgoingMessage } from 'premiereremote-shared';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const HTTP_PORT = 42400;
 const WS_PORT = 42401;
 const REQUEST_TIMEOUT_MS = 15_000;
-
-// ── Protocol types (mirror of wsClient.ts) ──────────────────────────────────
-// TODO: Either move to own file or to shared package
-
-interface IncomingMessage {
-    id: string;
-    actionId: string;
-    sourceType: 'http';
-    params?: Record<string, unknown>;
-}
-
-interface OutgoingMessage {
-    id: string;
-    status: 'OK' | 'NOT_FOUND' | 'INVALID_PARAMS' | 'INTERNAL_ERROR';
-    result?: unknown;
-    message?: string;
-}
 
 // ── Pending request registry ─────────────────────────────────────────────────
 

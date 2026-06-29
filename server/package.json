@@ -17,6 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "premiereremote-shared": "file:../shared",
     "express": "^5.2.1",
     "openapi-backend": "^5.16.1",
     "swagger-ui-express": "^5.0.1",

@@ -14,6 +14,9 @@ importers:
       openapi-backend:
         specifier: ^5.16.1
         version: 5.16.1
+      premiereremote-shared:
+        specifier: file:../shared
+        version: file:../shared
       swagger-ui-express:
         specifier: ^5.0.1
         version: 5.0.1(express@5.2.1)
@@ -710,6 +713,9 @@ packages:
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
+
+  premiereremote-shared@file:../shared:
+    resolution: {directory: ../shared, type: directory}
 
   prettier@3.8.3:
     resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
@@ -1603,6 +1609,8 @@ snapshots:
   picomatch@4.0.4: {}
 
   prelude-ls@1.2.1: {}
+
+  premiereremote-shared@file:../shared: {}
 
   prettier@3.8.3: {}
 

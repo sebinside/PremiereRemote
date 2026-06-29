@@ -1,29 +1,14 @@
 import {
     Registry,
     ParameterMetadata,
-    ResponseStatus,
-    SourceType,
     UIInterface,
 } from "./types.js";
+import type { IncomingMessage, OutgoingMessage } from "premiereremote-shared";
 import { WEBSOCKET_PORT } from "../user.config.js";
 import { Statuses } from "./ui.js";
 
 const WEBSOCKET_URL = `ws://localhost:${WEBSOCKET_PORT}`;
 const RECONNECT_INTERVAL = 3000;
-
-interface IncomingMessage {
-    id: string;
-    actionId: string;
-    sourceType: SourceType;
-    params?: Record<string, unknown>;
-}
-
-interface OutgoingMessage {
-    id: string;
-    status: ResponseStatus;
-    result?: unknown;
-    message?: string;
-}
 
 export class WsClient {
     private ws: WebSocket | null = null;

@@ -19,6 +19,9 @@
     "check-lint": "eslint src scripts tests",
     "test": "vitest run"
   },
+  "dependencies": {
+    "premiereremote-shared": "file:../shared"
+  },
   "devDependencies": {
     "@adobe/premierepro": "^26.3.0",
     "@eslint/js": "^10.0.1",
