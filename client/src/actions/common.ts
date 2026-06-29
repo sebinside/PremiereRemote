@@ -59,7 +59,7 @@ type VideoTrackDetails = {
 
 /**
  * Returns the details of all clips of all video tracks. If a `trackIndex` is specified, the result is limited to this track.
- * @param trackIndex An optional, non-negative index of the track to limit the result to.
+ * @param trackIndex An optional, non-negative, zero-based index of the track to limit the result to.
  * @returns An array of `VideoTrackDetails`, which may be empty if the specified track has not been found or no tracks exist.
  */
 export async function getAllVideoClips(

@@ -1,8 +1,4 @@
-import {
-    Registry,
-    ParameterMetadata,
-    UIInterface,
-} from "./types.js";
+import { Registry, ParameterMetadata, UIInterface } from "./types.js";
 import type { IncomingMessage, OutgoingMessage } from "premiereremote-shared";
 import { WEBSOCKET_PORT } from "../user.config.js";
 import { Statuses } from "./ui.js";
