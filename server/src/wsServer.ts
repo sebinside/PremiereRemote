@@ -1,59 +1,77 @@
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { randomUUID } from "crypto";
-import type { IncomingMessage, OutgoingMessage } from "premiereremote-shared";
+import { readFileSync } from "fs";
+import { Ajv, type ValidateFunction } from "ajv";
+import type { Bridge } from "./uxpBridge.js";
 
-export interface UxpBridge {
-    isConnected(): boolean;
-    sendToUxp(
-        actionId: string,
-        params: Record<string, unknown>,
-    ): Promise<OutgoingMessage>;
+interface WsMessage {
+    action: string;
+    args?: Record<string, unknown>;
 }
 
-const REQUEST_TIMEOUT_MS = 60_000;
+interface WsResponse {
+    id: string;
+    status: "ok" | "error";
+    result?: unknown;
+    error?: string;
+}
 
-type PendingRequest = {
-    resolve: (msg: OutgoingMessage) => void;
-    timer: ReturnType<typeof setTimeout>;
-};
+interface OpenAPIOperation {
+    operationId: string;
+    parameters?: Array<{
+        name: string;
+        in: string;
+        required: boolean;
+        schema: Record<string, unknown>;
+    }>;
+    requestBody?: {
+        content: {
+            "application/json": {
+                schema: Record<string, unknown>;
+            };
+        };
+    };
+}
 
-export class WsServer implements UxpBridge {
-    private wss: WebSocketServer;
-    private uxpSocket: WebSocket | null = null;
-    private pending = new Map<string, PendingRequest>();
+interface OpenAPISpec {
+    paths: Record<string, Record<string, OpenAPIOperation>>;
+}
 
-    constructor(readonly port: number) {
+export class WsServer {
+    private readonly wss: WebSocketServer;
+    private readonly ajv = new Ajv();
+    private readonly validators = new Map<string, ValidateFunction>();
+    private readonly operations = new Map<string, OpenAPIOperation>();
+
+    constructor(
+        readonly port: number,
+        private readonly bridge: Bridge,
+        openApiSpecPath: string,
+    ) {
+        const spec = JSON.parse(readFileSync(openApiSpecPath, "utf8")) as OpenAPISpec;
+        for (const methods of Object.values(spec.paths)) {
+            for (const operation of Object.values(methods)) {
+                if (operation.operationId) {
+                    this.operations.set(operation.operationId, operation);
+                    const schema = this.buildSchema(operation);
+                    if (schema) {
+                        this.validators.set(operation.operationId, this.ajv.compile(schema));
+                    }
+                }
+            }
+        }
+
         this.wss = new WebSocketServer({ port });
 
         this.wss.on("connection", (ws) => {
-            console.log("UXP plugin connected");
-            this.uxpSocket = ws;
-
+            console.log("WebSocket client connected");
             ws.on("message", (data) => {
-                let msg: OutgoingMessage;
-                try {
-                    msg = JSON.parse(data.toString()) as OutgoingMessage;
-                } catch {
-                    console.error(
-                        "Failed to parse message from UXP:",
-                        data.toString(),
-                    );
-                    return;
-                }
-
-                const req = this.pending.get(msg.id);
-                if (req) {
-                    clearTimeout(req.timer);
-                    this.pending.delete(msg.id);
-                    req.resolve(msg);
-                }
+                this.handleMessage(ws, data).catch((err: unknown) => {
+                    console.error("Unhandled error in message handler:", err);
+                });
             });
-
-            ws.on("close", () => {
-                console.log("UXP plugin disconnected");
-                this.uxpSocket = null;
-                this.rejectAllPending("UXP connection closed");
-            });
+            ws.on("close", () => console.log("WebSocket client disconnected"));
+            ws.on("error", (err) => console.error("WebSocket error:", err));
         });
 
         this.wss.on("listening", () => {
@@ -61,61 +79,90 @@ export class WsServer implements UxpBridge {
         });
     }
 
-    isConnected(): boolean {
-        return (
-            this.uxpSocket !== null &&
-            this.uxpSocket.readyState === WebSocket.OPEN
-        );
-    }
+    private buildSchema(
+        operation: OpenAPIOperation,
+    ): { type: "object"; properties: Record<string, unknown>; required: string[] } | null {
+        const properties: Record<string, unknown> = {};
+        const required: string[] = [];
 
-    sendToUxp(
-        actionId: string,
-        params: Record<string, unknown>,
-    ): Promise<OutgoingMessage> {
-        if (!this.isConnected()) {
-            const id = randomUUID();
-            return Promise.resolve({
-                id,
-                status: "INTERNAL_ERROR",
-                message: "UXP is not connected",
-            });
+        for (const param of operation.parameters ?? []) {
+            properties[param.name] = param.schema;
+            if (param.required) required.push(param.name);
         }
 
-        return new Promise<OutgoingMessage>((resolve) => {
-            const id = randomUUID();
+        const bodySchema = operation.requestBody?.content["application/json"]?.schema;
+        if (bodySchema) {
+            const props = bodySchema["properties"];
+            if (props && typeof props === "object" && !Array.isArray(props)) {
+                Object.assign(properties, props);
+            }
+            const req = bodySchema["required"];
+            if (Array.isArray(req)) required.push(...(req as string[]));
+        }
 
-            const timer = setTimeout(() => {
-                this.pending.delete(id);
-                resolve({
-                    id,
-                    status: "INTERNAL_ERROR",
-                    message: "Request timed out",
-                });
-            }, REQUEST_TIMEOUT_MS);
-
-            this.pending.set(id, { resolve, timer });
-
-            const msg: IncomingMessage = {
-                id,
-                actionId,
-                sourceType: "http",
-                ...(Object.keys(params).length > 0 ? { params } : {}),
-            };
-
-            this.uxpSocket!.send(JSON.stringify(msg));
-        });
+        return Object.keys(properties).length > 0
+            ? { type: "object", properties, required }
+            : null;
     }
 
-    private rejectAllPending(reason: string): void {
-        for (const [id, req] of this.pending) {
-            clearTimeout(req.timer);
-            req.resolve({ id, status: "INTERNAL_ERROR", message: reason });
+    private rawDataToString(data: RawData): string {
+        if (Buffer.isBuffer(data)) return data.toString();
+        if (data instanceof ArrayBuffer) return Buffer.from(data).toString();
+        return Buffer.concat(data).toString();
+    }
+
+    private send(ws: WebSocket, response: WsResponse): void {
+        ws.send(JSON.stringify(response));
+    }
+
+    private async handleMessage(ws: WebSocket, raw: RawData): Promise<void> {
+        const id = randomUUID();
+
+        let message: WsMessage;
+        try {
+            message = JSON.parse(this.rawDataToString(raw)) as WsMessage;
+        } catch {
+            this.send(ws, { id, status: "error", error: "Invalid JSON" });
+            return;
         }
-        this.pending.clear();
+
+        if (!message.action || typeof message.action !== "string") {
+            this.send(ws, { id, status: "error", error: "Missing or invalid 'action' field" });
+            return;
+        }
+
+        if (!this.operations.has(message.action)) {
+            this.send(ws, { id, status: "error", error: `Unknown action: ${message.action}` });
+            return;
+        }
+
+        const validate = this.validators.get(message.action);
+        if (validate) {
+            const args = message.args ?? {};
+            if (!validate(args)) {
+                const errors = (validate.errors ?? [])
+                    .map((e) => `${e.instancePath || "args"} ${e.message ?? ""}`)
+                    .join("; ");
+                this.send(ws, { id, status: "error", error: `Validation failed: ${errors}` });
+                return;
+            }
+        }
+
+        if (!this.bridge.isConnected()) {
+            this.send(ws, { id, status: "error", error: "Premiere Pro is not connected" });
+            return;
+        }
+
+        const result = await this.bridge.sendToUxp(message.action, message.args ?? {}, "ws");
+
+        if (result.status === "OK") {
+            this.send(ws, { id, status: "ok", result: result.result ?? null });
+        } else {
+            this.send(ws, { id, status: "error", error: result.message });
+        }
     }
 
     close(): void {
-        this.rejectAllPending("Server is shutting down");
         this.wss.close();
     }
 }

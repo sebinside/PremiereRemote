@@ -18,12 +18,16 @@
   },
   "dependencies": {
     "premiereremote-shared": "file:../shared",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cors": "^2.8.5",
     "express": "^5.2.1",
     "openapi-backend": "^5.16.1",
     "swagger-ui-express": "^5.0.1",
-    "ws": "^8.20.1"
+    "ws": "^8.20.1",
+    "ajv": "^8.16.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
     "@types/node": "^25.7.0",
     "@types/swagger-ui-express": "^4.1.8",

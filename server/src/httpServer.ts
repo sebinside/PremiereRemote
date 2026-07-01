@@ -3,7 +3,7 @@ import { OpenAPIBackend } from "openapi-backend";
 import type { Context } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
-import type { UxpBridge } from "./wsServer.ts";
+import type { Bridge } from "./uxpBridge.js";
 
 export class HttpServer {
     private readonly app: express.Express;
@@ -12,7 +12,7 @@ export class HttpServer {
     constructor(
         readonly port: number,
         readonly openApiSpecPath: string,
-        private readonly wsServer: UxpBridge,
+        private readonly bridge: Bridge,
     ) {
         this.app = express();
         this.app.use(express.json());
@@ -50,7 +50,7 @@ export class HttpServer {
                 _req: express.Request,
                 res: express.Response,
             ) => {
-                if (!this.wsServer.isConnected()) {
+                if (!this.bridge.isConnected()) {
                     return res
                         .status(503)
                         .json({ error: "Premiere Pro is not connected" });
@@ -72,7 +72,7 @@ export class HttpServer {
                     Object.keys(params).length ? params : "(no params)",
                 );
 
-                const result = await this.wsServer.sendToUxp(actionId, params);
+                const result = await this.bridge.sendToUxp(actionId, params, "http");
 
                 switch (result.status) {
                     case "OK":
@@ -90,8 +90,7 @@ export class HttpServer {
         await api.init();
 
         this.app.use((req, res, next) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            api.handleRequest(req as any, req, res).catch(next);
+            api.handleRequest(req as Parameters<typeof api.handleRequest>[0], req, res).catch(next);
         });
 
         return new Promise((resolve) => {
