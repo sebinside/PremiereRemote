@@ -35,7 +35,10 @@ interface OpenAPISpec {
 }
 
 export class MCPServer {
-    private readonly server = new Server({ name: "PremiereRemote", version: "1.0.0" });
+    private readonly server = new Server(
+        { name: "PremiereRemote", version: "1.0.0" },
+        { capabilities: { tools: {} } }
+    );
     private readonly operations = new Map<string, OpenAPIOperation>();
     private readonly app: express.Express;
     private httpServer: ReturnType<typeof this.app.listen> | null = null;

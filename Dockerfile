@@ -4,6 +4,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml ./client/
+COPY shared/ ./shared/
 RUN cd client && pnpm install --frozen-lockfile
 
 
@@ -17,6 +18,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY server/package.json server/pnpm-lock.yaml server/pnpm-workspace.yaml ./
+COPY shared/ /shared/
 RUN pnpm install --frozen-lockfile
 
 COPY server/tsconfig.json ./
@@ -34,6 +36,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY server/package.json server/pnpm-lock.yaml server/pnpm-workspace.yaml ./
+COPY shared/ /shared/
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/dist ./dist/
