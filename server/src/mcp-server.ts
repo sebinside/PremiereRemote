@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { randomUUID } from "node:crypto";
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -6,6 +7,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import {
     ListToolsRequestSchema,
     CallToolRequestSchema,
+    isInitializeRequest,
     type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Bridge } from "./uxpBridge.js";
@@ -35,11 +37,11 @@ interface OpenAPISpec {
 }
 
 export class MCPServer {
-    private readonly server = new Server({ name: "PremiereRemote", version: "1.0.0" });
     private readonly operations = new Map<string, OpenAPIOperation>();
     private readonly app: express.Express;
     private httpServer: ReturnType<typeof this.app.listen> | null = null;
-    private httpTransport: StreamableHTTPServerTransport | null = null;
+    /** One transport (and its MCP Server) per client session, keyed by session id. */
+    private readonly transports = new Map<string, StreamableHTTPServerTransport>();
 
     constructor(
         private readonly bridge: Bridge,
@@ -56,7 +58,6 @@ export class MCPServer {
         }
 
         console.log(`MCP server: loaded ${this.operations.size} tools`);
-        this.registerHandlers();
 
         // Initialize Express app with CORS and middleware
         this.app = express();
@@ -65,65 +66,100 @@ export class MCPServer {
         this.setupRoutes();
     }
 
-    private registerHandlers(): void {
-        this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    /** Builds a fresh MCP Server with the tool handlers registered. One per session. */
+    private createServer(): Server {
+        const server = new Server(
+            { name: "PremiereRemote", version: "1.0.0" },
+            { capabilities: { tools: {} } },
+        );
+
+        server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools: Array.from(this.operations.values()).map((op) => this.toTool(op)),
         }));
 
-        this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+        server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const { name, arguments: args } = request.params;
             return this.callTool(name, args ?? {});
         });
+
+        return server;
     }
 
     private setupRoutes(): void {
-        // Initialize the StreamableHTTPServerTransport
-        this.httpTransport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: () => Math.random().toString(36).substring(7),
-        });
-
-        // GET /sse or /stream: SSE stream endpoint
-        this.app.get("/sse", async (req: Request, res: Response) => {
-            console.log("MCP client connected via SSE");
+        // POST: JSON-RPC messages. A request without a session id must be `initialize`,
+        // which spins up a new transport + Server pair; everything else reuses one by id.
+        const handlePost = async (req: Request, res: Response): Promise<void> => {
             try {
-                await this.httpTransport!.handleRequest(req, res, req.body);
-            } catch (err) {
-                console.error("Error handling SSE request:", err);
-                if (!res.headersSent) {
-                    res.status(500).json({ error: "Failed to handle SSE stream" });
+                const sessionId = req.headers["mcp-session-id"] as string | undefined;
+                let transport = sessionId ? this.transports.get(sessionId) : undefined;
+
+                if (!transport) {
+                    if (sessionId || !isInitializeRequest(req.body)) {
+                        res.status(400).json({
+                            jsonrpc: "2.0",
+                            error: { code: -32000, message: "Bad Request: no valid session" },
+                            id: null,
+                        });
+                        return;
+                    }
+
+                    transport = new StreamableHTTPServerTransport({
+                        sessionIdGenerator: () => randomUUID(),
+                        onsessioninitialized: (id) => {
+                            this.transports.set(id, transport!);
+                            console.log(`MCP session initialized: ${id}`);
+                        },
+                        onsessionclosed: (id) => {
+                            this.transports.delete(id);
+                            console.log(`MCP session closed: ${id}`);
+                        },
+                    });
+                    transport.onclose = () => {
+                        if (transport!.sessionId) this.transports.delete(transport!.sessionId);
+                    };
+
+                    await this.createServer().connect(transport);
                 }
-            }
-        });
 
-        // POST /sse: Message endpoint (can also be used for both)
-        this.app.post("/sse", async (req: Request, res: Response) => {
-            try {
-                await this.httpTransport!.handleRequest(req, res, req.body);
-            } catch (err) {
-                console.error("Error handling MCP message:", err);
-                if (!res.headersSent) {
-                    res.status(500).json({ error: "Failed to process message" });
-                }
-            }
-        });
-
-        // Alternative unified endpoint: /mcp
-        this.app.all("/mcp", async (req: Request, res: Response) => {
-            try {
-                await this.httpTransport!.handleRequest(req, res, req.body);
+                await transport.handleRequest(req, res, req.body);
             } catch (err) {
                 console.error("Error handling MCP request:", err);
                 if (!res.headersSent) {
                     res.status(500).json({ error: "Failed to process request" });
                 }
             }
-        });
+        };
+
+        // GET: server-initiated SSE stream. DELETE: explicit session teardown. Both need a session.
+        const handleSessionRequest = async (req: Request, res: Response): Promise<void> => {
+            const sessionId = req.headers["mcp-session-id"] as string | undefined;
+            const transport = sessionId ? this.transports.get(sessionId) : undefined;
+            if (!transport) {
+                res.status(400).send("Invalid or missing session id");
+                return;
+            }
+            try {
+                await transport.handleRequest(req, res, req.body);
+            } catch (err) {
+                console.error("Error handling MCP session request:", err);
+                if (!res.headersSent) {
+                    res.status(500).json({ error: "Failed to handle request" });
+                }
+            }
+        };
+
+        for (const path of ["/mcp", "/sse"]) {
+            this.app.post(path, handlePost);
+            this.app.get(path, handleSessionRequest);
+            this.app.delete(path, handleSessionRequest);
+        }
 
         // Health check endpoint
         this.app.get("/health", (_req: Request, res: Response) => {
             res.json({
                 status: "ok",
                 tools: this.operations.size,
+                sessions: this.transports.size,
                 premiereConnected: this.bridge.isConnected(),
             });
         });
@@ -195,9 +231,7 @@ export class MCPServer {
     }
 
     async start(): Promise<void> {
-        // Connect the MCP server to the HTTP transport
-        await this.server.connect(this.httpTransport!);
-
+        // Transports are created lazily per session in setupRoutes(); nothing to connect here.
         return new Promise((resolve) => {
             this.httpServer = this.app.listen(this.port, () => {
                 console.log(`MCP server listening on http://localhost:${this.port}`);
@@ -213,10 +247,11 @@ export class MCPServer {
         if (this.httpServer) {
             this.httpServer.close();
         }
-        if (this.httpTransport) {
-            this.httpTransport.close().catch((err) => {
-                console.error("Error closing HTTP transport:", err);
+        for (const transport of this.transports.values()) {
+            transport.close().catch((err) => {
+                console.error("Error closing MCP transport:", err);
             });
         }
+        this.transports.clear();
     }
 }
