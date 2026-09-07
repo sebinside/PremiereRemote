@@ -1,0 +1,52 @@
+name: UXP Client CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+  pull_request:
+    paths:
+      - "client/**"
+
+jobs:
+  ci:
+    name: UXP Client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: client/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate API
+        run: pnpm run generate-api
+
+      - name: Check formatting
+        run: pnpm run check-format
+
+      - name: Lint
+        run: pnpm run check-lint
+
+      - name: Type check
+        run: pnpm run check-types
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm run test

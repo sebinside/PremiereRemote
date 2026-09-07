@@ -1,0 +1,11 @@
+{
+  "name": "premiereremote-shared",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/types.ts",
+      "default": "./src/types.ts"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+services:
+  premiere-remote:
+    build: .
+    ports:
+      - "42400:42400"
+      - "42401:42401"

@@ -1,17 +1,40 @@
 {
   "name": "premiereremote",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "dependencies": {
-    "express": "^4.21.2",
-    "swagger-jsdoc": "^3.2.9",
-    "swagger-ui-express": "^4.6.0",
-    "ws": "^8.18.0"
-  },
+  "version": "3.0.0",
+  "description": "PremiereRemote - MCP, HTTP, and WS servers for Adobe Premiere Pro UXP",
+  "author": "sebinside",
+  "license": "MIT",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "pnpm run setup && pnpm run bundle",
+    "dev": "pnpm run clean && cp -r static/. build/ && nodemon --watch src --ignore src/generated --ext ts --exec \"node scripts/generate-api.js && pnpm run bundle\"",
+    "clean": "rm -rf build",
+    "setup": "pnpm run clean && node scripts/generate-api.js && cp -r static/. build/",
+    "bundle": "esbuild src/core/index.ts --bundle --outfile=build/index.js --platform=node --format=iife --external:premierepro",
+    "generate-api": "node scripts/generate-api.js",
+    "prepare-packaging": "rm -rf node_modules && pnpm install --prod && node scripts/prepare-packaging.js",
+    "format": "prettier --write src scripts tests",
+    "check-format": "prettier --check src scripts tests",
+    "check-types": "tsc --noEmit",
+    "check-lint": "eslint src scripts tests",
+    "test": "vitest run"
   },
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+    "premiereremote-shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@adobe/premierepro": "^26.3.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.7.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
+    "esbuild": "^0.28.0",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.3",
+    "ts-morph": "^28.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
 }

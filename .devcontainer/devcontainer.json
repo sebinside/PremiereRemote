@@ -1,0 +1,20 @@
+{
+  "name": "PremiereRemote Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": ".devcontainer/post-install.sh",
+  "forwardPorts": [42400],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "mounts": [
+    "source=${env:HOME}/.ssh,target=/home/node/.ssh,type=bind,readonly",
+    "source=${env:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,readonly"
+  ]
+}
