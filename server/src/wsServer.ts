@@ -1,8 +1,20 @@
 import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { randomUUID } from "crypto";
-import { readFileSync } from "fs";
-import { Ajv, type ValidateFunction } from "ajv";
+import type { ResponseStatus } from "premiereremote-shared";
 import type { Bridge } from "./uxpBridge.js";
+import {
+    Ajv,
+    type ValidateFunction,
+    type OpenAPIOperation,
+    loadOperations,
+    buildArgsSchema,
+    buildValidator,
+    formatValidationErrors,
+    logDispatch,
+} from "./openapiOperations.js";
+
+/** Reserved action name for operation discovery — never a real operationId (those all contain "/"). */
+const LIST_ACTION = "$list";
 
 interface WsMessage {
     action: string;
@@ -14,51 +26,25 @@ interface WsResponse {
     status: "ok" | "error";
     result?: unknown;
     error?: string;
-}
-
-interface OpenAPIOperation {
-    operationId: string;
-    parameters?: Array<{
-        name: string;
-        in: string;
-        required: boolean;
-        schema: Record<string, unknown>;
-    }>;
-    requestBody?: {
-        content: {
-            "application/json": {
-                schema: Record<string, unknown>;
-            };
-        };
-    };
-}
-
-interface OpenAPISpec {
-    paths: Record<string, Record<string, OpenAPIOperation>>;
+    /** Present on error: mirrors the bridge's ResponseStatus so clients can branch without string-matching `error`. */
+    code?: ResponseStatus;
 }
 
 export class WsServer {
     private readonly wss: WebSocketServer;
     private readonly ajv = new Ajv();
     private readonly validators = new Map<string, ValidateFunction>();
-    private readonly operations = new Map<string, OpenAPIOperation>();
+    private readonly operations: Map<string, OpenAPIOperation>;
 
     constructor(
         readonly port: number,
         private readonly bridge: Bridge,
         openApiSpecPath: string,
     ) {
-        const spec = JSON.parse(readFileSync(openApiSpecPath, "utf8")) as OpenAPISpec;
-        for (const methods of Object.values(spec.paths)) {
-            for (const operation of Object.values(methods)) {
-                if (operation.operationId) {
-                    this.operations.set(operation.operationId, operation);
-                    const schema = this.buildSchema(operation);
-                    if (schema) {
-                        this.validators.set(operation.operationId, this.ajv.compile(schema));
-                    }
-                }
-            }
+        this.operations = loadOperations(openApiSpecPath);
+        for (const [operationId, operation] of this.operations) {
+            const validator = buildValidator(this.ajv, operation);
+            if (validator) this.validators.set(operationId, validator);
         }
 
         this.wss = new WebSocketServer({ port });
@@ -79,32 +65,6 @@ export class WsServer {
         });
     }
 
-    private buildSchema(
-        operation: OpenAPIOperation,
-    ): { type: "object"; properties: Record<string, unknown>; required: string[] } | null {
-        const properties: Record<string, unknown> = {};
-        const required: string[] = [];
-
-        for (const param of operation.parameters ?? []) {
-            properties[param.name] = param.schema;
-            if (param.required) required.push(param.name);
-        }
-
-        const bodySchema = operation.requestBody?.content["application/json"]?.schema;
-        if (bodySchema) {
-            const props = bodySchema["properties"];
-            if (props && typeof props === "object" && !Array.isArray(props)) {
-                Object.assign(properties, props);
-            }
-            const req = bodySchema["required"];
-            if (Array.isArray(req)) required.push(...(req as string[]));
-        }
-
-        return Object.keys(properties).length > 0
-            ? { type: "object", properties, required }
-            : null;
-    }
-
     private rawDataToString(data: RawData): string {
         if (Buffer.isBuffer(data)) return data.toString();
         if (data instanceof ArrayBuffer) return Buffer.from(data).toString();
@@ -115,6 +75,22 @@ export class WsServer {
         ws.send(JSON.stringify(response));
     }
 
+    /** Lists every available operation, mirroring what MCP's `tools/list` and HTTP's `/docs` expose. */
+    private listOperations(): Array<{
+        action: string;
+        summary?: string;
+        description?: string;
+        properties: Record<string, Record<string, unknown>>;
+        required: string[];
+    }> {
+        return Array.from(this.operations.values()).map((operation) => ({
+            action: operation.operationId,
+            summary: operation.summary,
+            description: operation.description,
+            ...buildArgsSchema(operation),
+        }));
+    }
+
     private async handleMessage(ws: WebSocket, raw: RawData): Promise<void> {
         const id = randomUUID();
 
@@ -122,43 +98,73 @@ export class WsServer {
         try {
             message = JSON.parse(this.rawDataToString(raw)) as WsMessage;
         } catch {
-            this.send(ws, { id, status: "error", error: "Invalid JSON" });
+            this.send(ws, {
+                id,
+                status: "error",
+                error: "Invalid JSON payload",
+            });
             return;
         }
 
         if (!message.action || typeof message.action !== "string") {
-            this.send(ws, { id, status: "error", error: "Missing or invalid 'action' field" });
+            this.send(ws, {
+                id,
+                status: "error",
+                error: "Missing or invalid 'action' field",
+            });
+            return;
+        }
+
+        if (message.action === LIST_ACTION) {
+            this.send(ws, { id, status: "ok", result: this.listOperations() });
             return;
         }
 
         if (!this.operations.has(message.action)) {
-            this.send(ws, { id, status: "error", error: `Unknown action: ${message.action}` });
+            this.send(ws, {
+                id,
+                status: "error",
+                error: `Unknown operation: ${message.action}`,
+                code: "NOT_FOUND",
+            });
             return;
         }
 
+        const args = message.args ?? {};
+
         const validate = this.validators.get(message.action);
-        if (validate) {
-            const args = message.args ?? {};
-            if (!validate(args)) {
-                const errors = (validate.errors ?? [])
-                    .map((e) => `${e.instancePath || "args"} ${e.message ?? ""}`)
-                    .join("; ");
-                this.send(ws, { id, status: "error", error: `Validation failed: ${errors}` });
-                return;
-            }
+        if (validate && !validate(args)) {
+            this.send(ws, {
+                id,
+                status: "error",
+                error: `Validation error: ${formatValidationErrors(validate)}`,
+                code: "INVALID_PARAMS",
+            });
+            return;
         }
 
         if (!this.bridge.isConnected()) {
-            this.send(ws, { id, status: "error", error: "Premiere Pro is not connected" });
+            this.send(ws, {
+                id,
+                status: "error",
+                error: "Premiere Pro is not connected",
+                code: "INTERNAL_ERROR",
+            });
             return;
         }
 
-        const result = await this.bridge.sendToUxp(message.action, message.args ?? {}, "ws");
+        logDispatch(message.action, args);
+        const result = await this.bridge.sendToUxp(message.action, args, "ws");
 
         if (result.status === "OK") {
             this.send(ws, { id, status: "ok", result: result.result ?? null });
         } else {
-            this.send(ws, { id, status: "error", error: result.message });
+            this.send(ws, {
+                id,
+                status: "error",
+                error: result.message,
+                code: result.status,
+            });
         }
     }
 

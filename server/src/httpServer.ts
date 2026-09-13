@@ -4,6 +4,7 @@ import type { Context } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import type { Bridge } from "./uxpBridge.js";
+import { logDispatch } from "./openapiOperations.js";
 
 export class HttpServer {
     private readonly app: express.Express;
@@ -16,6 +17,23 @@ export class HttpServer {
     ) {
         this.app = express();
         this.app.use(express.json());
+        // Keep malformed-body errors JSON like every other error response (WS/MCP also
+        // report this as "Invalid JSON payload"), instead of falling through to Express's
+        // default HTML error page.
+        this.app.use(
+            (
+                err: unknown,
+                _req: express.Request,
+                res: express.Response,
+                next: express.NextFunction,
+            ) => {
+                if (err instanceof SyntaxError && "body" in err) {
+                    res.status(400).json({ error: "Invalid JSON payload" });
+                    return;
+                }
+                next(err);
+            },
+        );
     }
 
     async init(): Promise<void> {
@@ -31,10 +49,12 @@ export class HttpServer {
         api.register({
             notFound: (
                 _c: Context,
-                _req: express.Request,
+                req: express.Request,
                 res: express.Response,
             ) => {
-                res.status(404).json({ error: "Not found" });
+                res.status(404).json({
+                    error: `Unknown operation: ${req.method} ${req.path}`,
+                });
             },
 
             validationFail: (
@@ -67,12 +87,13 @@ export class HttpServer {
                         : {}),
                 };
 
-                console.log(
-                    `→ ${actionId}`,
-                    Object.keys(params).length ? params : "(no params)",
-                );
+                logDispatch(actionId, params);
 
-                const result = await this.bridge.sendToUxp(actionId, params, "http");
+                const result = await this.bridge.sendToUxp(
+                    actionId,
+                    params,
+                    "http",
+                );
 
                 switch (result.status) {
                     case "OK":
@@ -90,7 +111,11 @@ export class HttpServer {
         await api.init();
 
         this.app.use((req, res, next) => {
-            api.handleRequest(req as Parameters<typeof api.handleRequest>[0], req, res).catch(next);
+            api.handleRequest(
+                req as Parameters<typeof api.handleRequest>[0],
+                req,
+                res,
+            ).catch(next);
         });
 
         return new Promise((resolve) => {

@@ -1,6 +1,10 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
-import type { IncomingMessage, OutgoingMessage, SourceType } from "premiereremote-shared";
+import type {
+    IncomingMessage,
+    OutgoingMessage,
+    SourceType,
+} from "premiereremote-shared";
 
 export interface Bridge {
     isConnected(): boolean;
@@ -35,7 +39,10 @@ export class UxpBridge implements Bridge {
                 try {
                     msg = JSON.parse(data.toString()) as OutgoingMessage;
                 } catch {
-                    console.error("Failed to parse message from UXP:", data.toString());
+                    console.error(
+                        "Failed to parse message from UXP:",
+                        data.toString(),
+                    );
                     return;
                 }
 
@@ -60,7 +67,10 @@ export class UxpBridge implements Bridge {
     }
 
     isConnected(): boolean {
-        return this.uxpSocket !== null && this.uxpSocket.readyState === WebSocket.OPEN;
+        return (
+            this.uxpSocket !== null &&
+            this.uxpSocket.readyState === WebSocket.OPEN
+        );
     }
 
     sendToUxp(
@@ -72,7 +82,7 @@ export class UxpBridge implements Bridge {
             return Promise.resolve({
                 id: randomUUID(),
                 status: "INTERNAL_ERROR",
-                message: "UXP is not connected",
+                message: "Premiere Pro is not connected",
             });
         }
 
@@ -81,7 +91,11 @@ export class UxpBridge implements Bridge {
 
             const timer = setTimeout(() => {
                 this.pending.delete(id);
-                resolve({ id, status: "INTERNAL_ERROR", message: "Request timed out" });
+                resolve({
+                    id,
+                    status: "INTERNAL_ERROR",
+                    message: "Request timed out",
+                });
             }, REQUEST_TIMEOUT_MS);
 
             this.pending.set(id, { resolve, timer });
