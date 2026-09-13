@@ -1,5 +1,9 @@
+.vscode/
+.pnpm-store/
 node_modules/
-.idea/
-jquery.min.js
-host/build/
-plugin/
+
+client/build/
+client/src/generated/
+
+server/openapi.json
+server/dist
