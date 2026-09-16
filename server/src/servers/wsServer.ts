@@ -13,7 +13,7 @@ import {
     formatValidationErrors,
     logDispatch,
     logAndExit,
-} from "./openapiOperations.js";
+} from "../openapiOperations.js";
 
 /** Reserved action name for operation discovery — never a real operationId (those all contain "/"). */
 const LIST_ACTION = "$list";

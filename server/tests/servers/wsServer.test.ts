@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { WebSocket } from "ws";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import type { Bridge } from "../src/uxpBridge.js";
-import { WsServer } from "../src/wsServer.js";
+import type { Bridge } from "../../src/servers/uxpBridge.js";
+import { WsServer } from "../../src/servers/wsServer.js";
 import { mockBridge } from "./mockBridge.js";
 
 const specPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "fixtures/openapi.fixture.json",
+    "../fixtures/openapi.fixture.json",
 );
 
 function sendAndReceive(

@@ -1,9 +1,9 @@
 import { Registry, ParameterMetadata, UIInterface } from "./types.js";
 import type { IncomingMessage, OutgoingMessage } from "premiereremote-shared";
-import { WEBSOCKET_PORT } from "../user.config.js";
+import { WS_PORT } from "premiereremote-shared/config";
 import { Statuses } from "./ui.js";
 
-const WEBSOCKET_URL = `ws://localhost:${WEBSOCKET_PORT}`;
+const WEBSOCKET_URL = `ws://localhost:${WS_PORT}`;
 const RECONNECT_INTERVAL = 3000;
 
 export class WsClient {
@@ -13,7 +13,7 @@ export class WsClient {
     constructor(
         private readonly registry: Registry,
         private readonly ui: UIInterface,
-    ) {}
+    ) { }
 
     start(): void {
         this.ui.reset();

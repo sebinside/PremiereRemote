@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import type { Bridge } from "../src/uxpBridge.js";
-import { HttpServer } from "../src/httpServer.js";
+import type { Bridge } from "../../src/servers/uxpBridge.js";
+import { HttpServer } from "../../src/servers/httpServer.js";
 import { mockBridge } from "./mockBridge.js";
 
 const specPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "fixtures/openapi.fixture.json",
+    "../fixtures/openapi.fixture.json",
 );
 
 describe("HttpServer", () => {

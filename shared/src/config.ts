@@ -1,5 +1,5 @@
 /**
- * User-facing configuration for the PremiereRemote server.
+ * User-facing configuration for PremiereRemote.
  * Edit this file to change settings without touching the core plugin code.
  * Note: This cannot be done using env variables because the UXP plugin cannot read them.
  */

@@ -5,11 +5,11 @@ import {
     WS_PORT,
     EXTERNAL_WS_PORT,
     MCP_PORT,
-} from "./user.config.js";
-import { HttpServer } from "./httpServer.js";
-import { UxpBridge } from "./uxpBridge.js";
-import { WsServer } from "./wsServer.js";
-import { MCPServer } from "./mcp-server.js";
+} from "premiereremote-shared/config";
+import { HttpServer } from "./servers/httpServer.js";
+import { UxpBridge } from "./servers/uxpBridge.js";
+import { WsServer } from "./servers/wsServer.js";
+import { MCPServer } from "./servers/mcp-server.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openApiSpecPath = resolve(__dirname, "../openapi.json");

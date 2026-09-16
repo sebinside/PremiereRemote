@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { WebSocket } from "ws";
 import type { OutgoingMessage } from "premiereremote-shared";
-import { UxpBridge } from "../src/uxpBridge.js";
+import { UxpBridge } from "../../src/servers/uxpBridge.js";
 
 function waitForOpen(ws: WebSocket): Promise<void> {
     return new Promise((resolve, reject) => {

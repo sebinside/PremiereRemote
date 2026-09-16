@@ -3,13 +3,13 @@ import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Bridge } from "../src/uxpBridge.js";
-import { MCPServer } from "../src/mcp-server.js";
+import type { Bridge } from "../../src/servers/uxpBridge.js";
+import { MCPServer } from "../../src/servers/mcp-server.js";
 import { mockBridge } from "./mockBridge.js";
 
 const specPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "fixtures/openapi.fixture.json",
+    "../fixtures/openapi.fixture.json",
 );
 
 function parseToolResult(result: {

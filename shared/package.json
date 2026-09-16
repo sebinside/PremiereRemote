@@ -6,6 +6,10 @@
     ".": {
       "types": "./src/types.ts",
       "default": "./src/types.ts"
+    },
+    "./config": {
+      "types": "./src/config.ts",
+      "default": "./src/config.ts"
     }
   }
 }

@@ -6,7 +6,7 @@ import type {
     OutgoingMessage,
     SourceType,
 } from "premiereremote-shared";
-import { logAndExit } from "./openapiOperations.js";
+import { logAndExit } from "../openapiOperations.js";
 
 export interface Bridge {
     isConnected(): boolean;

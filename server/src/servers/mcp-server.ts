@@ -21,7 +21,7 @@ import {
     formatValidationErrors,
     logDispatch,
     logAndExit,
-} from "./openapiOperations.js";
+} from "../openapiOperations.js";
 
 export class MCPServer {
     private readonly operations: Map<string, OpenAPIOperation>;

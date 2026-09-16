@@ -9,7 +9,7 @@ import {
     logDispatch,
     formatValidationErrors,
     logAndExit,
-} from "./openapiOperations.js";
+} from "../openapiOperations.js";
 
 export class HttpServer {
     private readonly app: express.Express;
