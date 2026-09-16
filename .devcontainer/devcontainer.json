@@ -6,6 +6,12 @@
   "postCreateCommand": ".devcontainer/post-install.sh",
   "initializeCommand": "mkdir -p \"${localEnv:HOME}/.claude\" && touch \"${localEnv:HOME}/.claude.json\"",
   "forwardPorts": [42400],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
+      "moby": false
+    }
+  },
+  "runArgs": ["--privileged"],
   "customizations": {
     "vscode": {
       "extensions": [

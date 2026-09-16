@@ -21,7 +21,7 @@ COPY server/package.json server/pnpm-lock.yaml server/pnpm-workspace.yaml ./
 COPY shared/ /shared/
 RUN pnpm install --frozen-lockfile
 
-COPY server/tsconfig.json ./
+COPY server/tsconfig.json server/tsconfig.build.json ./
 COPY server/src/ ./src/
 COPY --from=api-gen /app/server/openapi.json ./openapi.json
 RUN pnpm run build
@@ -46,6 +46,10 @@ COPY --from=api-gen /app/server/openapi.json ./openapi.json
 EXPOSE 42400
 # WebSocket (UXP plugin)
 EXPOSE 42401
+# WebSocket (external clients)
+EXPOSE 42402
+# MCP server
+EXPOSE 42403
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/index.js"]

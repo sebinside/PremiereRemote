@@ -1,0 +1,47 @@
+name: Docker E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "compose.yaml"
+      - "client/**"
+      - "server/**"
+      - "shared/**"
+      - "e2e/**"
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - "compose.yaml"
+      - "client/**"
+      - "server/**"
+      - "shared/**"
+      - "e2e/**"
+
+jobs:
+  ci:
+    name: Docker E2E
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: e2e
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: e2e/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Docker smoke test
+        run: pnpm run test
