@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { Ajv, type ValidateFunction } from "ajv";
+import { Ajv, type ValidateFunction, type ErrorObject } from "ajv";
 
 /**
  * Everything WS, MCP, and HTTP need to know about a single OpenAPI operation.
@@ -92,9 +92,11 @@ export function buildValidator(
         : null;
 }
 
-/** Formats AJV errors the same way everywhere a validator is used, e.g. ".param2 must have required property 'param2'". */
-export function formatValidationErrors(validate: ValidateFunction): string {
-    return (validate.errors ?? [])
+/** Formats AJV errors the same way everywhere validation runs (HTTP, WS, MCP), e.g. ".param2 must have required property 'param2'". */
+export function formatValidationErrors(
+    errors: ErrorObject[] | null | undefined,
+): string {
+    return (errors ?? [])
         .map((e) => `${e.instancePath || "args"} ${e.message ?? ""}`.trim())
         .join("; ");
 }

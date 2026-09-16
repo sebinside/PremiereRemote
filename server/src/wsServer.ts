@@ -137,7 +137,7 @@ export class WsServer {
             this.send(ws, {
                 id,
                 status: "error",
-                error: `Validation error: ${formatValidationErrors(validate)}`,
+                error: `Validation error: ${formatValidationErrors(validate.errors)}`,
                 code: "INVALID_PARAMS",
             });
             return;

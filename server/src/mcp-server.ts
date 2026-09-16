@@ -220,7 +220,7 @@ export class MCPServer {
                     {
                         type: "text",
                         text: JSON.stringify({
-                            error: `Validation error: ${formatValidationErrors(validate)}`,
+                            error: `Validation error: ${formatValidationErrors(validate.errors)}`,
                             status: "INVALID_PARAMS",
                         }),
                     },

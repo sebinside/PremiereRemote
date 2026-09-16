@@ -4,7 +4,7 @@ import type { Context } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import type { Bridge } from "./uxpBridge.js";
-import { logDispatch } from "./openapiOperations.js";
+import { logDispatch, formatValidationErrors } from "./openapiOperations.js";
 
 export class HttpServer {
     private readonly app: express.Express;
@@ -62,7 +62,9 @@ export class HttpServer {
                 _req: express.Request,
                 res: express.Response,
             ) => {
-                res.status(400).json({ error: c.validation.errors });
+                res.status(400).json({
+                    error: `Validation error: ${formatValidationErrors(c.validation.errors)}`,
+                });
             },
 
             notImplemented: async (
