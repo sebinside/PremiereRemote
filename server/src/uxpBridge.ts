@@ -60,6 +60,8 @@ export class UxpBridge implements Bridge {
                 this.uxpSocket = null;
                 this.rejectAllPending("UXP connection closed");
             });
+
+            ws.on("error", (err) => console.error("UXP socket error:", err));
         });
 
         this.wss.on("listening", () => {
