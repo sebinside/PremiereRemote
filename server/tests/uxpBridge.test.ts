@@ -1,25 +1,7 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { WebSocket } from "ws";
 import type { OutgoingMessage } from "premiereremote-shared";
 import { UxpBridge } from "../src/uxpBridge.js";
-
-function waitFor(predicate: () => boolean, timeoutMs = 1000): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const start = Date.now();
-        const check = (): void => {
-            if (predicate()) {
-                resolve();
-                return;
-            }
-            if (Date.now() - start > timeoutMs) {
-                reject(new Error("timed out waiting for condition"));
-                return;
-            }
-            setTimeout(check, 5);
-        };
-        check();
-    });
-}
 
 function waitForOpen(ws: WebSocket): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -70,7 +52,7 @@ describe("UxpBridge", () => {
             await bridge.ready();
             const client = await connectFakePanel();
             client.close();
-            await waitFor(() => !bridge.isConnected());
+            await vi.waitFor(() => expect(bridge.isConnected()).toBe(false));
         });
     });
 

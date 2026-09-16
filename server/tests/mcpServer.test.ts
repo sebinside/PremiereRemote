@@ -5,18 +5,12 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Bridge } from "../src/uxpBridge.js";
 import { MCPServer } from "../src/mcp-server.js";
+import { mockBridge } from "./mockBridge.js";
 
 const specPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
     "fixtures/openapi.fixture.json",
 );
-
-function mockBridge(): Bridge {
-    return {
-        isConnected: vi.fn().mockReturnValue(true),
-        sendToUxp: vi.fn(),
-    };
-}
 
 function parseToolResult(result: {
     content: Array<{ type: string; text: string }>;

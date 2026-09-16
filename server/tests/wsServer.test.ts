@@ -4,18 +4,12 @@ import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import type { Bridge } from "../src/uxpBridge.js";
 import { WsServer } from "../src/wsServer.js";
+import { mockBridge } from "./mockBridge.js";
 
 const specPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
     "fixtures/openapi.fixture.json",
 );
-
-function mockBridge(): Bridge {
-    return {
-        isConnected: vi.fn().mockReturnValue(true),
-        sendToUxp: vi.fn(),
-    };
-}
 
 function sendAndReceive(
     ws: WebSocket,

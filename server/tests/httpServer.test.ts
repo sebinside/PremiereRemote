@@ -3,18 +3,12 @@ import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import type { Bridge } from "../src/uxpBridge.js";
 import { HttpServer } from "../src/httpServer.js";
+import { mockBridge } from "./mockBridge.js";
 
 const specPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
     "fixtures/openapi.fixture.json",
 );
-
-function mockBridge(): Bridge {
-    return {
-        isConnected: vi.fn().mockReturnValue(true),
-        sendToUxp: vi.fn(),
-    };
-}
 
 describe("HttpServer", () => {
     let server: HttpServer;

@@ -7,20 +7,7 @@ export default [
         ignores: ["dist/"],
     },
     {
-        files: ["src/**/*.ts"],
-        languageOptions: {
-            parser: tsparser,
-        },
-        plugins: {
-            "@typescript-eslint": tseslint,
-        },
-        rules: {
-            ...tseslint.configs.recommended.rules,
-            ...prettier.rules,
-        },
-    },
-    {
-        files: ["tests/**/*.ts"],
+        files: ["src/**/*.ts", "tests/**/*.ts"],
         languageOptions: {
             parser: tsparser,
         },
