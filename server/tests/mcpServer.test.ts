@@ -25,7 +25,7 @@ describe("MCPServer", () => {
 
     beforeAll(async () => {
         bridge = mockBridge();
-        server = new MCPServer(bridge, specPath, 0);
+        server = new MCPServer(0, specPath, bridge);
         await server.start();
 
         client = new Client({ name: "test-client", version: "0.0.0" });

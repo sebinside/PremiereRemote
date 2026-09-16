@@ -18,7 +18,7 @@ describe("HttpServer", () => {
     beforeAll(async () => {
         bridge = mockBridge();
         server = new HttpServer(0, specPath, bridge);
-        await server.init();
+        await server.start();
         baseUrl = `http://localhost:${server.boundPort}`;
     });
 

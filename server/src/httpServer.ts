@@ -41,7 +41,7 @@ export class HttpServer {
         );
     }
 
-    async init(): Promise<void> {
+    async start(): Promise<void> {
         const apiDoc = JSON.parse(
             readFileSync(this.openApiSpecPath, "utf8"),
         ) as object;
@@ -140,9 +140,11 @@ export class HttpServer {
         });
     }
 
-    close(callback?: () => void): void {
-        if (this.server) this.server.close(callback);
-        else callback?.();
+    close(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this.server) this.server.close(() => resolve());
+            else resolve();
+        });
     }
 
     /** The actual bound port — differs from the constructor's `port` when that was `0`. */

@@ -25,23 +25,26 @@ type PendingRequest = {
 };
 
 export class UxpBridge implements Bridge {
-    private readonly wss: WebSocketServer;
+    private wss: WebSocketServer | null = null;
     private uxpSocket: WebSocket | null = null;
     private readonly pending = new Map<string, PendingRequest>();
-    private readonly listening: Promise<void>;
 
     constructor(
         readonly port: number,
         private readonly requestTimeoutMs: number = REQUEST_TIMEOUT_MS,
-    ) {
-        this.wss = new WebSocketServer({ port });
+    ) {}
 
-        this.listening = new Promise((resolve, reject) => {
-            this.wss.once("listening", resolve);
-            this.wss.once("error", reject);
+    /** Binds the port and starts accepting UXP connections. Resolves once listening. */
+    start(): Promise<void> {
+        const wss = new WebSocketServer({ port: this.port });
+        this.wss = wss;
+
+        const listening = new Promise<void>((resolve, reject) => {
+            wss.once("listening", resolve);
+            wss.once("error", reject);
         });
 
-        this.wss.on("connection", (ws) => {
+        wss.on("connection", (ws) => {
             console.log("UXP plugin connected");
             this.uxpSocket = ws;
 
@@ -74,21 +77,18 @@ export class UxpBridge implements Bridge {
             ws.on("error", (err) => console.error("UXP socket error:", err));
         });
 
-        this.wss.on("listening", () => {
-            console.log(`UXP bridge listening on ws://localhost:${port}`);
+        wss.on("listening", () => {
+            console.log(`UXP bridge listening on ws://localhost:${this.port}`);
         });
 
-        this.wss.on("error", logAndExit("UXP bridge"));
-    }
+        wss.on("error", logAndExit("UXP bridge"));
 
-    /** Resolves once the underlying WebSocket server has bound its port. */
-    ready(): Promise<void> {
-        return this.listening;
+        return listening;
     }
 
     /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
-        return (this.wss.address() as AddressInfo).port;
+        return (this.wss!.address() as AddressInfo).port;
     }
 
     isConnected(): boolean {
@@ -144,8 +144,11 @@ export class UxpBridge implements Bridge {
         this.pending.clear();
     }
 
-    close(): void {
+    close(): Promise<void> {
         this.rejectAllPending("Server is shutting down");
-        this.wss.close();
+        return new Promise((resolve) => {
+            if (this.wss) this.wss.close(() => resolve());
+            else resolve();
+        });
     }
 }

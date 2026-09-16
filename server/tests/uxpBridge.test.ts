@@ -36,20 +36,20 @@ describe("UxpBridge", () => {
     describe("isConnected", () => {
         it("is false before any panel connects", async () => {
             bridge = new UxpBridge(0);
-            await bridge.ready();
+            await bridge.start();
             expect(bridge.isConnected()).toBe(false);
         });
 
         it("becomes true once the fake panel connects", async () => {
             bridge = new UxpBridge(0);
-            await bridge.ready();
+            await bridge.start();
             await connectFakePanel();
             expect(bridge.isConnected()).toBe(true);
         });
 
         it("becomes false again once the panel disconnects", async () => {
             bridge = new UxpBridge(0);
-            await bridge.ready();
+            await bridge.start();
             const client = await connectFakePanel();
             client.close();
             await vi.waitFor(() => expect(bridge.isConnected()).toBe(false));
@@ -59,7 +59,7 @@ describe("UxpBridge", () => {
     describe("sendToUxp", () => {
         it("resolves immediately with INTERNAL_ERROR when not connected", async () => {
             bridge = new UxpBridge(0);
-            await bridge.ready();
+            await bridge.start();
 
             const result = await bridge.sendToUxp("some/action", {}, "ws");
 
@@ -69,7 +69,7 @@ describe("UxpBridge", () => {
 
         it("resolves with the panel's reply when the id matches", async () => {
             bridge = new UxpBridge(0);
-            await bridge.ready();
+            await bridge.start();
             const client = await connectFakePanel();
 
             const incomingPromise = waitForMessage(client);
@@ -95,7 +95,7 @@ describe("UxpBridge", () => {
 
         it("times out when the panel never replies", async () => {
             bridge = new UxpBridge(0, 50);
-            await bridge.ready();
+            await bridge.start();
             await connectFakePanel();
 
             const result = await bridge.sendToUxp("some/action", {}, "ws");

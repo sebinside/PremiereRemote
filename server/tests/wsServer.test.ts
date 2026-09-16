@@ -32,8 +32,8 @@ describe("WsServer", () => {
 
     beforeAll(async () => {
         bridge = mockBridge();
-        server = new WsServer(0, bridge, specPath);
-        await server.ready();
+        server = new WsServer(0, specPath, bridge);
+        await server.start();
         client = new WebSocket(`ws://localhost:${server.boundPort}`);
         await new Promise<void>((resolve, reject) => {
             client.once("open", resolve);

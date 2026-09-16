@@ -36,9 +36,9 @@ export class MCPServer {
     >();
 
     constructor(
-        private readonly bridge: Bridge,
-        openApiSpecPath: string,
         private readonly port: number,
+        openApiSpecPath: string,
+        private readonly bridge: Bridge,
     ) {
         this.operations = loadOperations(openApiSpecPath);
         for (const [operationId, operation] of this.operations) {
@@ -307,16 +307,20 @@ export class MCPServer {
         });
     }
 
-    close(): void {
-        if (this.httpServer) {
-            this.httpServer.close();
-        }
-        for (const transport of this.transports.values()) {
-            transport.close().catch((err) => {
-                console.error("Error closing MCP transport:", err);
-            });
-        }
+    async close(): Promise<void> {
+        await Promise.all(
+            [...this.transports.values()].map((transport) =>
+                transport.close().catch((err) => {
+                    console.error("Error closing MCP transport:", err);
+                }),
+            ),
+        );
         this.transports.clear();
+
+        await new Promise<void>((resolve) => {
+            if (this.httpServer) this.httpServer.close(() => resolve());
+            else resolve();
+        });
     }
 
     /** The actual bound port — differs from the constructor's `port` when that was `0`. */

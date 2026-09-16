@@ -33,31 +33,34 @@ interface WsResponse {
 }
 
 export class WsServer {
-    private readonly wss: WebSocketServer;
+    private wss: WebSocketServer | null = null;
     private readonly ajv = new Ajv();
     private readonly validators = new Map<string, ValidateFunction>();
     private readonly operations: Map<string, OpenAPIOperation>;
-    private readonly listening: Promise<void>;
 
     constructor(
         readonly port: number,
-        private readonly bridge: Bridge,
         openApiSpecPath: string,
+        private readonly bridge: Bridge,
     ) {
         this.operations = loadOperations(openApiSpecPath);
         for (const [operationId, operation] of this.operations) {
             const validator = buildValidator(this.ajv, operation);
             if (validator) this.validators.set(operationId, validator);
         }
+    }
 
-        this.wss = new WebSocketServer({ port });
+    /** Binds the port and starts accepting client connections. Resolves once listening. */
+    start(): Promise<void> {
+        const wss = new WebSocketServer({ port: this.port });
+        this.wss = wss;
 
-        this.listening = new Promise((resolve, reject) => {
-            this.wss.once("listening", resolve);
-            this.wss.once("error", reject);
+        const listening = new Promise<void>((resolve, reject) => {
+            wss.once("listening", resolve);
+            wss.once("error", reject);
         });
 
-        this.wss.on("connection", (ws) => {
+        wss.on("connection", (ws) => {
             console.log("WebSocket client connected");
             ws.on("message", (data) => {
                 this.handleMessage(ws, data).catch((err: unknown) => {
@@ -68,21 +71,20 @@ export class WsServer {
             ws.on("error", (err) => console.error("WebSocket error:", err));
         });
 
-        this.wss.on("listening", () => {
-            console.log(`WebSocket server listening on ws://localhost:${port}`);
+        wss.on("listening", () => {
+            console.log(
+                `WebSocket server listening on ws://localhost:${this.port}`,
+            );
         });
 
-        this.wss.on("error", logAndExit("WebSocket server"));
-    }
+        wss.on("error", logAndExit("WebSocket server"));
 
-    /** Resolves once the underlying WebSocket server has bound its port. */
-    ready(): Promise<void> {
-        return this.listening;
+        return listening;
     }
 
     /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
-        return (this.wss.address() as AddressInfo).port;
+        return (this.wss!.address() as AddressInfo).port;
     }
 
     private rawDataToString(data: RawData): string {
@@ -188,7 +190,10 @@ export class WsServer {
         }
     }
 
-    close(): void {
-        this.wss.close();
+    close(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this.wss) this.wss.close(() => resolve());
+            else resolve();
+        });
     }
 }
