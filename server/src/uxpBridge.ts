@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
+import type { AddressInfo } from "net";
 import { randomUUID } from "crypto";
 import type {
     IncomingMessage,
@@ -27,9 +28,18 @@ export class UxpBridge implements Bridge {
     private readonly wss: WebSocketServer;
     private uxpSocket: WebSocket | null = null;
     private readonly pending = new Map<string, PendingRequest>();
+    private readonly listening: Promise<void>;
 
-    constructor(readonly port: number) {
+    constructor(
+        readonly port: number,
+        private readonly requestTimeoutMs: number = REQUEST_TIMEOUT_MS,
+    ) {
         this.wss = new WebSocketServer({ port });
+
+        this.listening = new Promise((resolve, reject) => {
+            this.wss.once("listening", resolve);
+            this.wss.once("error", reject);
+        });
 
         this.wss.on("connection", (ws) => {
             console.log("UXP plugin connected");
@@ -71,6 +81,16 @@ export class UxpBridge implements Bridge {
         this.wss.on("error", logAndExit("UXP bridge"));
     }
 
+    /** Resolves once the underlying WebSocket server has bound its port. */
+    ready(): Promise<void> {
+        return this.listening;
+    }
+
+    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
+    get boundPort(): number {
+        return (this.wss.address() as AddressInfo).port;
+    }
+
     isConnected(): boolean {
         return (
             this.uxpSocket !== null &&
@@ -101,7 +121,7 @@ export class UxpBridge implements Bridge {
                     status: "INTERNAL_ERROR",
                     message: "Request timed out",
                 });
-            }, REQUEST_TIMEOUT_MS);
+            }, this.requestTimeoutMs);
 
             this.pending.set(id, { resolve, timer });
 

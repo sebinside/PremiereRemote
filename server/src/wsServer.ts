@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket, type RawData } from "ws";
+import type { AddressInfo } from "net";
 import { randomUUID } from "crypto";
 import type { ResponseStatus } from "premiereremote-shared";
 import type { Bridge } from "./uxpBridge.js";
@@ -36,6 +37,7 @@ export class WsServer {
     private readonly ajv = new Ajv();
     private readonly validators = new Map<string, ValidateFunction>();
     private readonly operations: Map<string, OpenAPIOperation>;
+    private readonly listening: Promise<void>;
 
     constructor(
         readonly port: number,
@@ -49,6 +51,11 @@ export class WsServer {
         }
 
         this.wss = new WebSocketServer({ port });
+
+        this.listening = new Promise((resolve, reject) => {
+            this.wss.once("listening", resolve);
+            this.wss.once("error", reject);
+        });
 
         this.wss.on("connection", (ws) => {
             console.log("WebSocket client connected");
@@ -66,6 +73,16 @@ export class WsServer {
         });
 
         this.wss.on("error", logAndExit("WebSocket server"));
+    }
+
+    /** Resolves once the underlying WebSocket server has bound its port. */
+    ready(): Promise<void> {
+        return this.listening;
+    }
+
+    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
+    get boundPort(): number {
+        return (this.wss.address() as AddressInfo).port;
     }
 
     private rawDataToString(data: RawData): string {

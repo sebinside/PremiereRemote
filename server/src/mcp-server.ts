@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { AddressInfo } from "node:net";
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -316,5 +317,10 @@ export class MCPServer {
             });
         }
         this.transports.clear();
+    }
+
+    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
+    get boundPort(): number {
+        return (this.httpServer!.address() as AddressInfo).port;
     }
 }

@@ -3,6 +3,7 @@ import { OpenAPIBackend } from "openapi-backend";
 import type { Context } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
+import type { AddressInfo } from "net";
 import type { Bridge } from "./uxpBridge.js";
 import {
     logDispatch,
@@ -142,5 +143,10 @@ export class HttpServer {
     close(callback?: () => void): void {
         if (this.server) this.server.close(callback);
         else callback?.();
+    }
+
+    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
+    get boundPort(): number {
+        return (this.server!.address() as AddressInfo).port;
     }
 }

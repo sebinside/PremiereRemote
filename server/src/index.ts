@@ -1,6 +1,11 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { HTTP_PORT, WS_PORT, EXTERNAL_WS_PORT, MCP_PORT } from "./user.config.js";
+import {
+    HTTP_PORT,
+    WS_PORT,
+    EXTERNAL_WS_PORT,
+    MCP_PORT,
+} from "./user.config.js";
 import { HttpServer } from "./httpServer.js";
 import { UxpBridge } from "./uxpBridge.js";
 import { WsServer } from "./wsServer.js";
