@@ -5,6 +5,7 @@ import type {
     OutgoingMessage,
     SourceType,
 } from "premiereremote-shared";
+import { logAndExit } from "./openapiOperations.js";
 
 export interface Bridge {
     isConnected(): boolean;
@@ -64,6 +65,8 @@ export class UxpBridge implements Bridge {
         this.wss.on("listening", () => {
             console.log(`UXP bridge listening on ws://localhost:${port}`);
         });
+
+        this.wss.on("error", logAndExit("UXP bridge"));
     }
 
     isConnected(): boolean {

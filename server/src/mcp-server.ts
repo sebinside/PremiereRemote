@@ -19,6 +19,7 @@ import {
     buildValidator,
     formatValidationErrors,
     logDispatch,
+    logAndExit,
 } from "./openapiOperations.js";
 
 export class MCPServer {
@@ -285,21 +286,23 @@ export class MCPServer {
     async start(): Promise<void> {
         // Transports are created lazily per session in setupRoutes(); nothing to connect here.
         return new Promise((resolve) => {
-            this.httpServer = this.app.listen(this.port, () => {
-                console.log(
-                    `MCP server listening on http://localhost:${this.port}`,
-                );
-                console.log(
-                    `  SSE endpoint:     http://localhost:${this.port}/sse`,
-                );
-                console.log(
-                    `  Unified endpoint: http://localhost:${this.port}/mcp`,
-                );
-                console.log(
-                    `  Health check:     http://localhost:${this.port}/health`,
-                );
-                resolve();
-            });
+            this.httpServer = this.app
+                .listen(this.port, () => {
+                    console.log(
+                        `MCP server listening on http://localhost:${this.port}`,
+                    );
+                    console.log(
+                        `  SSE endpoint:     http://localhost:${this.port}/sse`,
+                    );
+                    console.log(
+                        `  Unified endpoint: http://localhost:${this.port}/mcp`,
+                    );
+                    console.log(
+                        `  Health check:     http://localhost:${this.port}/health`,
+                    );
+                    resolve();
+                })
+                .on("error", logAndExit("MCP server"));
         });
     }
 

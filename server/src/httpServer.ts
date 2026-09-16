@@ -4,7 +4,11 @@ import type { Context } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import type { Bridge } from "./uxpBridge.js";
-import { logDispatch, formatValidationErrors } from "./openapiOperations.js";
+import {
+    logDispatch,
+    formatValidationErrors,
+    logAndExit,
+} from "./openapiOperations.js";
 
 export class HttpServer {
     private readonly app: express.Express;
@@ -121,19 +125,22 @@ export class HttpServer {
         });
 
         return new Promise((resolve) => {
-            this.server = this.app.listen(this.port, () => {
-                console.log(
-                    `HTTP server listening on  http://localhost:${this.port}`,
-                );
-                console.log(
-                    `Swagger UI available at   http://localhost:${this.port}/docs`,
-                );
-                resolve();
-            });
+            this.server = this.app
+                .listen(this.port, () => {
+                    console.log(
+                        `HTTP server listening on  http://localhost:${this.port}`,
+                    );
+                    console.log(
+                        `Swagger UI available at   http://localhost:${this.port}/docs`,
+                    );
+                    resolve();
+                })
+                .on("error", logAndExit("HTTP server"));
         });
     }
 
     close(callback?: () => void): void {
-        this.server?.close(callback);
+        if (this.server) this.server.close(callback);
+        else callback?.();
     }
 }

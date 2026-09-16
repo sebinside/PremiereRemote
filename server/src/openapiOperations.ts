@@ -112,4 +112,15 @@ export function logDispatch(
     );
 }
 
+/**
+ * Returns a listener for a server's `'error'` event (e.g. EADDRINUSE), logging a clear
+ * message and exiting instead of letting Node crash with an unhandled-exception stack trace.
+ */
+export function logAndExit(label: string): (err: Error) => void {
+    return (err: Error): void => {
+        console.error(`${label} failed to start:`, err.message);
+        process.exit(1);
+    };
+}
+
 export { Ajv, type ValidateFunction };

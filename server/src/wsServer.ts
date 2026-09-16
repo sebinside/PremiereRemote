@@ -11,6 +11,7 @@ import {
     buildValidator,
     formatValidationErrors,
     logDispatch,
+    logAndExit,
 } from "./openapiOperations.js";
 
 /** Reserved action name for operation discovery — never a real operationId (those all contain "/"). */
@@ -63,6 +64,8 @@ export class WsServer {
         this.wss.on("listening", () => {
             console.log(`WebSocket server listening on ws://localhost:${port}`);
         });
+
+        this.wss.on("error", logAndExit("WebSocket server"));
     }
 
     private rawDataToString(data: RawData): string {
