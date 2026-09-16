@@ -13,7 +13,7 @@ export class WsClient {
     constructor(
         private readonly registry: Registry,
         private readonly ui: UIInterface,
-    ) { }
+    ) {}
 
     start(): void {
         this.ui.reset();
