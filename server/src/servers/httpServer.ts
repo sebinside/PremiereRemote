@@ -6,7 +6,7 @@ import { readFileSync } from "fs";
 import type { AddressInfo } from "net";
 import type { Bridge } from "./uxpBridge.js";
 import {
-    logDispatch,
+    logAPICall,
     formatValidationErrors,
     logAndExit,
 } from "../openapiOperations.js";
@@ -94,7 +94,7 @@ export class HttpServer {
                         : {}),
                 };
 
-                logDispatch(actionId, params);
+                logAPICall(actionId, params);
 
                 const result = await this.bridge.sendToUxp(
                     actionId,

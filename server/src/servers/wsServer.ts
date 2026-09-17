@@ -2,16 +2,15 @@ import { WebSocketServer, WebSocket, type RawData } from "ws";
 import type { AddressInfo } from "net";
 import { randomUUID } from "crypto";
 import type { ResponseStatus } from "premiereremote-shared";
+import { Ajv, type ValidateFunction } from "ajv";
 import type { Bridge } from "./uxpBridge.js";
 import {
-    Ajv,
-    type ValidateFunction,
     type OpenAPIOperation,
-    loadOperations,
-    buildArgsSchema,
-    buildValidator,
+    loadAndIndexAllOperations,
+    buildOperationParameterSchema,
+    compileOperationValidator,
     formatValidationErrors,
-    logDispatch,
+    logAPICall,
     logAndExit,
 } from "../openapiOperations.js";
 
@@ -43,9 +42,9 @@ export class WsServer {
         openApiSpecPath: string,
         private readonly bridge: Bridge,
     ) {
-        this.operations = loadOperations(openApiSpecPath);
+        this.operations = loadAndIndexAllOperations(openApiSpecPath);
         for (const [operationId, operation] of this.operations) {
-            const validator = buildValidator(this.ajv, operation);
+            const validator = compileOperationValidator(this.ajv, operation);
             if (validator) this.validators.set(operationId, validator);
         }
     }
@@ -109,7 +108,7 @@ export class WsServer {
             action: operation.operationId,
             summary: operation.summary,
             description: operation.description,
-            ...buildArgsSchema(operation),
+            ...buildOperationParameterSchema(operation),
         }));
     }
 
@@ -175,7 +174,7 @@ export class WsServer {
             return;
         }
 
-        logDispatch(message.action, args);
+        logAPICall(message.action, args);
         const result = await this.bridge.sendToUxp(message.action, args, "ws");
 
         if (result.status === "OK") {

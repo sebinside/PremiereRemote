@@ -10,16 +10,15 @@ import {
     isInitializeRequest,
     type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { Ajv, type ValidateFunction } from "ajv";
 import type { Bridge } from "./uxpBridge.js";
 import {
-    Ajv,
-    type ValidateFunction,
     type OpenAPIOperation,
-    loadOperations,
-    buildArgsSchema,
-    buildValidator,
+    loadAndIndexAllOperations,
+    buildOperationParameterSchema,
+    compileOperationValidator,
     formatValidationErrors,
-    logDispatch,
+    logAPICall,
     logAndExit,
 } from "../openapiOperations.js";
 
@@ -40,9 +39,9 @@ export class MCPServer {
         openApiSpecPath: string,
         private readonly bridge: Bridge,
     ) {
-        this.operations = loadOperations(openApiSpecPath);
+        this.operations = loadAndIndexAllOperations(openApiSpecPath);
         for (const [operationId, operation] of this.operations) {
-            const validator = buildValidator(this.ajv, operation);
+            const validator = compileOperationValidator(this.ajv, operation);
             if (validator) this.validators.set(operationId, validator);
         }
 
@@ -177,7 +176,8 @@ export class MCPServer {
     }
 
     private toTool(operation: OpenAPIOperation): Tool {
-        const { properties, required } = buildArgsSchema(operation);
+        const { properties, required } =
+            buildOperationParameterSchema(operation);
 
         return {
             name: operation.operationId,
@@ -245,7 +245,7 @@ export class MCPServer {
         }
 
         try {
-            logDispatch(name, args);
+            logAPICall(name, args);
             const result = await this.bridge.sendToUxp(name, args, "mcp");
             if (result.status === "OK") {
                 return {

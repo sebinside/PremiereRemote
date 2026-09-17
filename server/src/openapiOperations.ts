@@ -1,11 +1,7 @@
 import { readFileSync } from "fs";
-import { Ajv, type ValidateFunction, type ErrorObject } from "ajv";
+import type { Ajv, ValidateFunction, ErrorObject } from "ajv";
 
-/**
- * Everything WS, MCP, and HTTP need to know about a single OpenAPI operation.
- * This is the one place that models the shape of `openapi.json` operations —
- * WS and MCP both used to parse this independently; they now share it.
- */
+/** Abstract representation of an OpenAPI operation, as parsed from `openapi.json`. Not the full specification, limited to what's needed by the servers. */
 export interface OpenAPIOperation {
     operationId: string;
     summary?: string;
@@ -17,21 +13,15 @@ export interface OpenAPIOperation {
         description?: string;
         schema: Record<string, unknown>;
     }>;
-    requestBody?: {
-        content: {
-            "application/json": {
-                schema: Record<string, unknown>;
-            };
-        };
-    };
 }
 
+/** Abstract representation of an OpenAPI specification, as parsed from `openapi.json`. */
 interface OpenAPISpec {
     paths: Record<string, Record<string, OpenAPIOperation>>;
 }
 
-/** Loads `openapi.json` and indexes every operation by its `operationId`. */
-export function loadOperations(
+/** Loads a `openapi.json` from the given path and indexes every operation by its `operationId`. */
+export function loadAndIndexAllOperations(
     specPath: string,
 ): Map<string, OpenAPIOperation> {
     const spec = JSON.parse(readFileSync(specPath, "utf8")) as OpenAPISpec;
@@ -47,12 +37,21 @@ export function loadOperations(
 }
 
 /**
- * Flattens an operation's query/path parameters and JSON request body into a single
- * JSON Schema `properties`/`required` pair describing the combined `args` object.
- * Used both to compile an AJV validator (WS, MCP) and to build an MCP tool's
- * `inputSchema` — one definition of "what does this operation take" for both.
+ * Flattens an operation's query/path parameters into a single JSON Schema
+ * `properties`/`required` pair describing the combined `args` object.
+ *
+ * Example:
+ * ```
+ *   {
+ *     "properties": {
+ *       "name": { "type": "string" },
+ *       "age": { "type": "number" }
+ *     },
+ *     "required": ["name"]
+ *   }
+ * ```
  */
-export function buildArgsSchema(operation: OpenAPIOperation): {
+export function buildOperationParameterSchema(operation: OpenAPIOperation): {
     properties: Record<string, Record<string, unknown>>;
     required: string[];
 } {
@@ -67,32 +66,21 @@ export function buildArgsSchema(operation: OpenAPIOperation): {
         if (param.required) required.push(param.name);
     }
 
-    const bodySchema =
-        operation.requestBody?.content["application/json"]?.schema;
-    if (bodySchema) {
-        const props = bodySchema["properties"];
-        if (props && typeof props === "object" && !Array.isArray(props)) {
-            Object.assign(properties, props);
-        }
-        const req = bodySchema["required"];
-        if (Array.isArray(req)) required.push(...(req as string[]));
-    }
-
     return { properties, required };
 }
 
 /** Compiles an AJV validator for an operation's combined args schema, or `null` if it takes none. */
-export function buildValidator(
+export function compileOperationValidator(
     ajv: Ajv,
     operation: OpenAPIOperation,
 ): ValidateFunction | null {
-    const { properties, required } = buildArgsSchema(operation);
+    const { properties, required } = buildOperationParameterSchema(operation);
     return Object.keys(properties).length > 0
         ? ajv.compile({ type: "object", properties, required })
         : null;
 }
 
-/** Formats AJV errors the same way everywhere validation runs (HTTP, WS, MCP), e.g. ".param2 must have required property 'param2'". */
+/** Formats AJV errors the same way everywhere validation runs (HTTP, WS, MCP). */
 export function formatValidationErrors(
     errors: ErrorObject[] | null | undefined,
 ): string {
@@ -101,8 +89,16 @@ export function formatValidationErrors(
         .join("; ");
 }
 
-/** Logs a dispatched call the same way across every protocol front-end (HTTP, WS, MCP). */
-export function logDispatch(
+/**
+ * Uniformly logs API calls across all servers (HTTP, WS, MCP).
+ *
+ * Example:
+ * ```
+ *   → renameClip { "name": "Intro" }
+ *   → common/getActiveSequenceName (no params)
+ * ```
+ */
+export function logAPICall(
     actionId: string,
     params: Record<string, unknown>,
 ): void {
@@ -122,5 +118,3 @@ export function logAndExit(label: string): (err: Error) => void {
         process.exit(1);
     };
 }
-
-export { Ajv, type ValidateFunction };

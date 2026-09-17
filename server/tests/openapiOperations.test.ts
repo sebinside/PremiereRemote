@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { Ajv } from "ajv";
 import {
-    Ajv,
-    loadOperations,
-    buildArgsSchema,
-    buildValidator,
+    loadAndIndexAllOperations,
+    buildOperationParameterSchema,
+    compileOperationValidator,
     formatValidationErrors,
-    logDispatch,
+    logAPICall,
     logAndExit,
     type OpenAPIOperation,
 } from "../src/openapiOperations.js";
@@ -43,12 +43,12 @@ describe("loadOperations", () => {
     });
 
     it("indexes every operation by operationId, across paths and methods", () => {
-        const operations = loadOperations(specPath);
+        const operations = loadAndIndexAllOperations(specPath);
         expect([...operations.keys()]).toEqual(["a/get", "a/post"]);
     });
 
     it("skips operations with no operationId", () => {
-        const operations = loadOperations(specPath);
+        const operations = loadAndIndexAllOperations(specPath);
         expect(operations.size).toBe(2);
     });
 });
@@ -73,7 +73,8 @@ describe("buildArgsSchema", () => {
             ],
         };
 
-        const { properties, required } = buildArgsSchema(operation);
+        const { properties, required } =
+            buildOperationParameterSchema(operation);
         expect(properties).toEqual({
             required: { type: "string" },
             optional: { type: "number" },
@@ -82,7 +83,7 @@ describe("buildArgsSchema", () => {
     });
 
     it("carries parameter description through when present", () => {
-        const { properties } = buildArgsSchema({
+        const { properties } = buildOperationParameterSchema({
             operationId: "op",
             parameters: [
                 {
@@ -100,27 +101,8 @@ describe("buildArgsSchema", () => {
         });
     });
 
-    it("merges a JSON request body's properties/required in", () => {
-        const { properties, required } = buildArgsSchema({
-            operationId: "op",
-            requestBody: {
-                content: {
-                    "application/json": {
-                        schema: {
-                            type: "object",
-                            properties: { bodyField: { type: "boolean" } },
-                            required: ["bodyField"],
-                        },
-                    },
-                },
-            },
-        });
-        expect(properties).toEqual({ bodyField: { type: "boolean" } });
-        expect(required).toEqual(["bodyField"]);
-    });
-
-    it("returns empty properties/required for an operation with neither params nor body", () => {
-        const { properties, required } = buildArgsSchema({
+    it("returns empty properties/required for an operation with no params", () => {
+        const { properties, required } = buildOperationParameterSchema({
             operationId: "op",
         });
         expect(properties).toEqual({});
@@ -132,11 +114,13 @@ describe("buildValidator", () => {
     const ajv = new Ajv();
 
     it("returns null when the operation takes no args", () => {
-        expect(buildValidator(ajv, { operationId: "op" })).toBeNull();
+        expect(
+            compileOperationValidator(ajv, { operationId: "op" }),
+        ).toBeNull();
     });
 
     it("returns a validator that accepts valid args and rejects invalid ones", () => {
-        const validator = buildValidator(ajv, {
+        const validator = compileOperationValidator(ajv, {
             operationId: "op",
             parameters: [
                 {
@@ -185,14 +169,14 @@ describe("formatValidationErrors", () => {
 describe("logDispatch", () => {
     it("logs the actionId with its params", () => {
         const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-        logDispatch("some/action", { foo: "bar" });
+        logAPICall("some/action", { foo: "bar" });
         expect(spy).toHaveBeenCalledWith("→ some/action", { foo: "bar" });
         spy.mockRestore();
     });
 
     it("logs '(no params)' when params is empty", () => {
         const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-        logDispatch("some/action", {});
+        logAPICall("some/action", {});
         expect(spy).toHaveBeenCalledWith("→ some/action", "(no params)");
         spy.mockRestore();
     });

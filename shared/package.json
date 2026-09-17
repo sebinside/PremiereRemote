@@ -8,8 +8,8 @@
       "default": "./src/types.ts"
     },
     "./config": {
-      "types": "./src/config.ts",
-      "default": "./src/config.ts"
+      "types": "./src/config.d.ts",
+      "default": "./src/config.js"
     }
   }
 }
