@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -8,10 +8,8 @@ import {
     buildOperationParameterSchema,
     compileOperationValidator,
     formatValidationErrors,
-    logAPICall,
-    logAndExit,
     type OpenAPIOperation,
-} from "../src/openapiOperations.js";
+} from "../src/openapi.js";
 
 describe("loadOperations", () => {
     let tmpDir: string;
@@ -163,43 +161,5 @@ describe("formatValidationErrors", () => {
                 { instancePath: "/b", message: "bad b" } as never,
             ]),
         ).toBe("/a bad a; /b bad b");
-    });
-});
-
-describe("logDispatch", () => {
-    it("logs the actionId with its params", () => {
-        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-        logAPICall("some/action", { foo: "bar" });
-        expect(spy).toHaveBeenCalledWith("→ some/action", { foo: "bar" });
-        spy.mockRestore();
-    });
-
-    it("logs '(no params)' when params is empty", () => {
-        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-        logAPICall("some/action", {});
-        expect(spy).toHaveBeenCalledWith("→ some/action", "(no params)");
-        spy.mockRestore();
-    });
-});
-
-describe("logAndExit", () => {
-    it("logs the label and error message, then exits with code 1", () => {
-        const errorSpy = vi
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        const exitSpy = vi
-            .spyOn(process, "exit")
-            .mockImplementation(() => undefined as never);
-
-        logAndExit("Some server")(new Error("boom"));
-
-        expect(errorSpy).toHaveBeenCalledWith(
-            "Some server failed to start:",
-            "boom",
-        );
-        expect(exitSpy).toHaveBeenCalledWith(1);
-
-        errorSpy.mockRestore();
-        exitSpy.mockRestore();
     });
 });

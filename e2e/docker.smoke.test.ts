@@ -70,7 +70,7 @@ describe("docker image smoke test", () => {
 
     afterAll(() => {
         spawnSync("docker", [...COMPOSE_ARGS, "down", "-v"]);
-    });
+    }, BUILD_TIMEOUT_MS);
 
     it(
         "serves the HTTP API",

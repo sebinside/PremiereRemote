@@ -6,7 +6,7 @@ import type {
     OutgoingMessage,
     SourceType,
 } from "premiereremote-shared";
-import { logAndExit } from "../openapiOperations.js";
+import { log, logError, logAndExit } from "../log.js";
 
 export interface Bridge {
     isConnected(): boolean;
@@ -45,7 +45,7 @@ export class UxpBridge implements Bridge {
         });
 
         wss.on("connection", (ws) => {
-            console.log("UXP plugin connected");
+            log("UXP", "plugin connected");
             this.uxpSocket = ws;
 
             ws.on("message", (data) => {
@@ -53,8 +53,9 @@ export class UxpBridge implements Bridge {
                 try {
                     msg = JSON.parse(data.toString()) as OutgoingMessage;
                 } catch {
-                    console.error(
-                        "Failed to parse message from UXP:",
+                    logError(
+                        "UXP",
+                        "failed to parse message:",
                         data.toString(),
                     );
                     return;
@@ -69,19 +70,19 @@ export class UxpBridge implements Bridge {
             });
 
             ws.on("close", () => {
-                console.log("UXP plugin disconnected");
+                log("UXP", "plugin disconnected");
                 this.uxpSocket = null;
                 this.rejectAllPending("UXP connection closed");
             });
 
-            ws.on("error", (err) => console.error("UXP socket error:", err));
+            ws.on("error", (err) => logError("UXP", "socket error:", err));
         });
 
         wss.on("listening", () => {
-            console.log(`UXP bridge listening on ws://localhost:${this.port}`);
+            log("UXP", `Listening on ws://localhost:${this.port}`);
         });
 
-        wss.on("error", logAndExit("UXP bridge"));
+        wss.on("error", logAndExit("UXP"));
 
         return listening;
     }

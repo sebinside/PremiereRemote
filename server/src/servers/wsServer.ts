@@ -10,9 +10,14 @@ import {
     buildOperationParameterSchema,
     compileOperationValidator,
     formatValidationErrors,
-    logAPICall,
+} from "../openapi.js";
+import {
+    log,
+    logError,
+    logIncomingCall,
+    logOutgoingResult,
     logAndExit,
-} from "../openapiOperations.js";
+} from "../log.js";
 
 /** Reserved action name for operation discovery — never a real operationId (those all contain "/"). */
 const LIST_ACTION = "$list";
@@ -60,23 +65,21 @@ export class WsServer {
         });
 
         wss.on("connection", (ws) => {
-            console.log("WebSocket client connected");
+            log("WS", "client connected");
             ws.on("message", (data) => {
                 this.handleMessage(ws, data).catch((err: unknown) => {
-                    console.error("Unhandled error in message handler:", err);
+                    logError("WS", "unhandled error in message handler:", err);
                 });
             });
-            ws.on("close", () => console.log("WebSocket client disconnected"));
-            ws.on("error", (err) => console.error("WebSocket error:", err));
+            ws.on("close", () => log("WS", "client disconnected"));
+            ws.on("error", (err) => logError("WS", "socket error:", err));
         });
 
         wss.on("listening", () => {
-            console.log(
-                `WebSocket server listening on ws://localhost:${this.port}`,
-            );
+            log("WS", `Listening on ws://localhost:${this.port}`);
         });
 
-        wss.on("error", logAndExit("WebSocket server"));
+        wss.on("error", logAndExit("WS"));
 
         return listening;
     }
@@ -174,8 +177,9 @@ export class WsServer {
             return;
         }
 
-        logAPICall(message.action, args);
+        logIncomingCall("WS", message.action, args);
         const result = await this.bridge.sendToUxp(message.action, args, "ws");
+        logOutgoingResult("WS", message.action, result);
 
         if (result.status === "OK") {
             this.send(ws, { id, status: "ok", result: result.result ?? null });

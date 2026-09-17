@@ -88,33 +88,3 @@ export function formatValidationErrors(
         .map((e) => `${e.instancePath || "args"} ${e.message ?? ""}`.trim())
         .join("; ");
 }
-
-/**
- * Uniformly logs API calls across all servers (HTTP, WS, MCP).
- *
- * Example:
- * ```
- *   → renameClip { "name": "Intro" }
- *   → common/getActiveSequenceName (no params)
- * ```
- */
-export function logAPICall(
-    actionId: string,
-    params: Record<string, unknown>,
-): void {
-    console.log(
-        `→ ${actionId}`,
-        Object.keys(params).length ? params : "(no params)",
-    );
-}
-
-/**
- * Returns a listener for a server's `'error'` event (e.g. EADDRINUSE), logging a clear
- * message and exiting instead of letting Node crash with an unhandled-exception stack trace.
- */
-export function logAndExit(label: string): (err: Error) => void {
-    return (err: Error): void => {
-        console.error(`${label} failed to start:`, err.message);
-        process.exit(1);
-    };
-}

@@ -5,11 +5,8 @@ import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import type { AddressInfo } from "net";
 import type { Bridge } from "./uxpBridge.js";
-import {
-    logAPICall,
-    formatValidationErrors,
-    logAndExit,
-} from "../openapiOperations.js";
+import { formatValidationErrors } from "../openapi.js";
+import { log, logIncomingCall, logOutgoingResult, logAndExit } from "../log.js";
 
 export class HttpServer {
     private readonly app: express.Express;
@@ -94,13 +91,14 @@ export class HttpServer {
                         : {}),
                 };
 
-                logAPICall(actionId, params);
+                logIncomingCall("HTTP", actionId, params);
 
                 const result = await this.bridge.sendToUxp(
                     actionId,
                     params,
                     "http",
                 );
+                logOutgoingResult("HTTP", actionId, result);
 
                 switch (result.status) {
                     case "OK":
@@ -128,15 +126,14 @@ export class HttpServer {
         return new Promise((resolve) => {
             this.server = this.app
                 .listen(this.port, () => {
-                    console.log(
-                        `HTTP server listening on  http://localhost:${this.port}`,
-                    );
-                    console.log(
-                        `Swagger UI available at   http://localhost:${this.port}/docs`,
+                    log("HTTP", `Listening on http://localhost:${this.port}`);
+                    log(
+                        "HTTP",
+                        `Swagger UI available at http://localhost:${this.port}/docs`,
                     );
                     resolve();
                 })
-                .on("error", logAndExit("HTTP server"));
+                .on("error", logAndExit("HTTP"));
         });
     }
 

@@ -18,9 +18,14 @@ import {
     buildOperationParameterSchema,
     compileOperationValidator,
     formatValidationErrors,
-    logAPICall,
+} from "../openapi.js";
+import {
+    log,
+    logError,
+    logIncomingCall,
+    logOutgoingResult,
     logAndExit,
-} from "../openapiOperations.js";
+} from "../log.js";
 
 export class MCPServer {
     private readonly operations: Map<string, OpenAPIOperation>;
@@ -45,7 +50,7 @@ export class MCPServer {
             if (validator) this.validators.set(operationId, validator);
         }
 
-        console.log(`MCP server: loaded ${this.operations.size} tools`);
+        log("MCP", `Loaded ${this.operations.size} tools`);
 
         // Initialize Express app with CORS and middleware
         this.app = express();
@@ -107,11 +112,11 @@ export class MCPServer {
                         sessionIdGenerator: () => randomUUID(),
                         onsessioninitialized: (id) => {
                             this.transports.set(id, transport!);
-                            console.log(`MCP session initialized: ${id}`);
+                            log("MCP", `session initialized: ${id}`);
                         },
                         onsessionclosed: (id) => {
                             this.transports.delete(id);
-                            console.log(`MCP session closed: ${id}`);
+                            log("MCP", `session closed: ${id}`);
                         },
                     });
                     transport.onclose = () => {
@@ -124,7 +129,7 @@ export class MCPServer {
 
                 await transport.handleRequest(req, res, req.body);
             } catch (err) {
-                console.error("Error handling MCP request:", err);
+                logError("MCP", "error handling request:", err);
                 if (!res.headersSent) {
                     res.status(500).json({
                         error: "Failed to process request",
@@ -151,7 +156,7 @@ export class MCPServer {
             try {
                 await transport.handleRequest(req, res, req.body);
             } catch (err) {
-                console.error("Error handling MCP session request:", err);
+                logError("MCP", "error handling session request:", err);
                 if (!res.headersSent) {
                     res.status(500).json({ error: "Failed to handle request" });
                 }
@@ -245,8 +250,9 @@ export class MCPServer {
         }
 
         try {
-            logAPICall(name, args);
+            logIncomingCall("MCP", name, args);
             const result = await this.bridge.sendToUxp(name, args, "mcp");
+            logOutgoingResult("MCP", name, result);
             if (result.status === "OK") {
                 return {
                     content: [
@@ -289,21 +295,13 @@ export class MCPServer {
         return new Promise((resolve) => {
             this.httpServer = this.app
                 .listen(this.port, () => {
-                    console.log(
-                        `MCP server listening on http://localhost:${this.port}`,
-                    );
-                    console.log(
-                        `  SSE endpoint:     http://localhost:${this.port}/sse`,
-                    );
-                    console.log(
-                        `  Unified endpoint: http://localhost:${this.port}/mcp`,
-                    );
-                    console.log(
-                        `  Health check:     http://localhost:${this.port}/health`,
+                    log(
+                        "MCP",
+                        `Listening on http://localhost:${this.port} [/mcp, /sse, /health]`,
                     );
                     resolve();
                 })
-                .on("error", logAndExit("MCP server"));
+                .on("error", logAndExit("MCP"));
         });
     }
 
@@ -311,7 +309,7 @@ export class MCPServer {
         await Promise.all(
             [...this.transports.values()].map((transport) =>
                 transport.close().catch((err) => {
-                    console.error("Error closing MCP transport:", err);
+                    logError("MCP", "error closing transport:", err);
                 }),
             ),
         );
