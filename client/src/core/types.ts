@@ -1,3 +1,5 @@
+import type { SourceType } from "premiereremote-shared";
+
 export type ParameterType = "string" | "number" | "boolean";
 
 export interface ParameterMetadata {
@@ -13,8 +15,6 @@ export interface RegistryEntry {
 }
 
 export type Registry = Record<string, RegistryEntry>;
-
-export type SourceType = "ws" | "http" | "mcp";
 
 export type StatusState = "ok" | "warn" | "error";
 

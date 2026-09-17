@@ -34,9 +34,9 @@ for (const { name, server } of servers) {
 }
 
 async function shutdown(): Promise<void> {
-    log("Core", "shutting down...");
+    log("CORE", "shutting down...");
     await Promise.all(servers.map(({ server }) => server.close()));
-    log("Core", "shutdown complete.");
+    log("CORE", "shutdown complete.");
     process.exit(0);
 }
 process.on("SIGTERM", shutdown);

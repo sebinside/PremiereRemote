@@ -1,4 +1,5 @@
-import { SourceType, StatusState, Status, UIInterface } from "./types.js";
+import type { SourceType } from "premiereremote-shared";
+import { StatusState, Status, UIInterface } from "./types.js";
 
 const counts: Record<SourceType, number> = { ws: 0, http: 0, mcp: 0 };
 export const Statuses = {
