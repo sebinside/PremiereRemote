@@ -88,6 +88,14 @@ export class UxpBridge implements Bridge, ManagedServer {
         return listening;
     }
 
+    close(): Promise<void> {
+        this.rejectAllPending("Server is shutting down");
+        return new Promise((resolve) => {
+            if (this.wss) this.wss.close(() => resolve());
+            else resolve();
+        });
+    }
+
     get boundPort(): number {
         return (this.wss!.address() as AddressInfo).port;
     }
@@ -143,13 +151,5 @@ export class UxpBridge implements Bridge, ManagedServer {
             req.resolve({ id, status: "INTERNAL_ERROR", message: reason });
         }
         this.pending.clear();
-    }
-
-    close(): Promise<void> {
-        this.rejectAllPending("Server is shutting down");
-        return new Promise((resolve) => {
-            if (this.wss) this.wss.close(() => resolve());
-            else resolve();
-        });
     }
 }

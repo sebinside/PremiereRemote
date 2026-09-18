@@ -9,7 +9,7 @@ import {
 import { HttpServer } from "./servers/httpServer.js";
 import { UxpBridge } from "./servers/uxpBridge.js";
 import { WsServer } from "./servers/wsServer.js";
-import { MCPServer } from "./servers/mcp-server.js";
+import { MCPServer } from "./servers/mcpServer.js";
 import { log, logError } from "./log.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

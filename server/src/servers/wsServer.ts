@@ -85,6 +85,13 @@ export class WsServer implements ManagedServer {
         return listening;
     }
 
+    close(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this.wss) this.wss.close(() => resolve());
+            else resolve();
+        });
+    }
+
     get boundPort(): number {
         return (this.wss!.address() as AddressInfo).port;
     }
@@ -191,12 +198,5 @@ export class WsServer implements ManagedServer {
                 code: result.status,
             });
         }
-    }
-
-    close(): Promise<void> {
-        return new Promise((resolve) => {
-            if (this.wss) this.wss.close(() => resolve());
-            else resolve();
-        });
     }
 }

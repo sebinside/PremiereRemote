@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AddressInfo } from "node:net";
+import type { Server as HttpServer } from "node:http";
 import express, { type Request, type Response } from "express";
-import cors from "cors";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
@@ -33,8 +33,7 @@ export class MCPServer implements ManagedServer {
     private readonly ajv = new Ajv();
     private readonly validators = new Map<string, ValidateFunction>();
     private readonly app: express.Express;
-    private httpServer: ReturnType<typeof this.app.listen> | null = null;
-    /** One transport (and its MCP Server) per client session, keyed by session id. */
+    private httpServer: HttpServer | null = null;
     private readonly transports = new Map<
         string,
         StreamableHTTPServerTransport
@@ -53,11 +52,44 @@ export class MCPServer implements ManagedServer {
 
         log("MCP", `Loaded ${this.operations.size} tools`);
 
-        // Initialize Express app with CORS and middleware
         this.app = express();
-        this.app.use(cors());
         this.app.use(express.json());
         this.setupRoutes();
+    }
+
+    async start(): Promise<void> {
+        // Transports are created lazily per session in setupRoutes(); nothing to connect here.
+        return new Promise((resolve) => {
+            this.httpServer = this.app
+                .listen(this.port, () => {
+                    log(
+                        "MCP",
+                        `Listening on http://localhost:${this.port} [/mcp, /sse, /health]`,
+                    );
+                    resolve();
+                })
+                .on("error", logAndExit("MCP"));
+        });
+    }
+
+    async close(): Promise<void> {
+        await Promise.all(
+            [...this.transports.values()].map((transport) =>
+                transport.close().catch((err) => {
+                    logError("MCP", "error closing transport:", err);
+                }),
+            ),
+        );
+        this.transports.clear();
+
+        await new Promise<void>((resolve) => {
+            if (this.httpServer) this.httpServer.close(() => resolve());
+            else resolve();
+        });
+    }
+
+    get boundPort(): number {
+        return (this.httpServer!.address() as AddressInfo).port;
     }
 
     /** Builds a fresh MCP Server with the tool handlers registered. One per session. */
@@ -289,40 +321,5 @@ export class MCPServer implements ManagedServer {
                 ],
             };
         }
-    }
-
-    async start(): Promise<void> {
-        // Transports are created lazily per session in setupRoutes(); nothing to connect here.
-        return new Promise((resolve) => {
-            this.httpServer = this.app
-                .listen(this.port, () => {
-                    log(
-                        "MCP",
-                        `Listening on http://localhost:${this.port} [/mcp, /sse, /health]`,
-                    );
-                    resolve();
-                })
-                .on("error", logAndExit("MCP"));
-        });
-    }
-
-    async close(): Promise<void> {
-        await Promise.all(
-            [...this.transports.values()].map((transport) =>
-                transport.close().catch((err) => {
-                    logError("MCP", "error closing transport:", err);
-                }),
-            ),
-        );
-        this.transports.clear();
-
-        await new Promise<void>((resolve) => {
-            if (this.httpServer) this.httpServer.close(() => resolve());
-            else resolve();
-        });
-    }
-
-    get boundPort(): number {
-        return (this.httpServer!.address() as AddressInfo).port;
     }
 }

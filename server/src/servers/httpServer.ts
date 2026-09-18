@@ -1,6 +1,6 @@
 import express from "express";
 import { OpenAPIBackend } from "openapi-backend";
-import type { Context } from "openapi-backend";
+import type { Context, Request as ApiRequest } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import type { AddressInfo } from "net";
@@ -65,11 +65,7 @@ export class HttpServer implements ManagedServer {
         await api.init();
 
         this.app.use((req, res, next) => {
-            api.handleRequest(
-                req as Parameters<typeof api.handleRequest>[0],
-                req,
-                res,
-            ).catch(next);
+            api.handleRequest(req as ApiRequest, req, res).catch(next);
         });
 
         return new Promise((resolve) => {
@@ -84,6 +80,22 @@ export class HttpServer implements ManagedServer {
                 })
                 .on("error", logAndExit("HTTP"));
         });
+    }
+
+    close(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this.server) this.server.close(() => resolve());
+            else resolve();
+        });
+    }
+
+    get boundPort(): number {
+        if (!this.server) {
+            throw new Error(
+                "boundPort accessed before HttpServer.start() completed",
+            );
+        }
+        return (this.server.address() as AddressInfo).port;
     }
 
     private handleNotFound = (
@@ -157,20 +169,4 @@ export class HttpServer implements ManagedServer {
                     .json({ error: result.message });
         }
     };
-
-    close(): Promise<void> {
-        return new Promise((resolve) => {
-            if (this.server) this.server.close(() => resolve());
-            else resolve();
-        });
-    }
-
-    get boundPort(): number {
-        if (!this.server) {
-            throw new Error(
-                "boundPort accessed before HttpServer.start() completed",
-            );
-        }
-        return (this.server.address() as AddressInfo).port;
-    }
 }
