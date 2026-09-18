@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+# Required because the UXP packager cannot handle symlinks (lol).
+nodeLinker: hoisted
