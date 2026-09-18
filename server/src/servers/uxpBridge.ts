@@ -6,6 +6,7 @@ import type {
     OutgoingMessage,
     SourceType,
 } from "premiereremote-shared";
+import type { ManagedServer } from "./server.js";
 import { log, logError, logAndExit } from "../log.js";
 
 export interface Bridge {
@@ -24,7 +25,7 @@ type PendingRequest = {
     timer: ReturnType<typeof setTimeout>;
 };
 
-export class UxpBridge implements Bridge {
+export class UxpBridge implements Bridge, ManagedServer {
     private wss: WebSocketServer | null = null;
     private uxpSocket: WebSocket | null = null;
     private readonly pending = new Map<string, PendingRequest>();
@@ -87,7 +88,6 @@ export class UxpBridge implements Bridge {
         return listening;
     }
 
-    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
         return (this.wss!.address() as AddressInfo).port;
     }

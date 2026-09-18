@@ -6,6 +6,7 @@ import { readFileSync } from "fs";
 import type { AddressInfo } from "net";
 import type { Server } from "http";
 import type { Bridge } from "./uxpBridge.js";
+import type { ManagedServer } from "./server.js";
 import { formatValidationErrors } from "../openapi.js";
 import { log, logIncomingCall, logOutgoingResult, logAndExit } from "../log.js";
 
@@ -15,7 +16,7 @@ const HTTP_NOT_FOUND = 404;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_SERVICE_UNAVAILABLE = 503;
 
-export class HttpServer {
+export class HttpServer implements ManagedServer {
     private readonly app: express.Express;
     private server: Server | null = null;
 
@@ -37,7 +38,9 @@ export class HttpServer {
                 next: express.NextFunction,
             ) => {
                 if (err instanceof SyntaxError && "body" in err) {
-                    res.status(HTTP_BAD_REQUEST).json({ error: "Invalid JSON payload" });
+                    res.status(HTTP_BAD_REQUEST).json({
+                        error: "Invalid JSON payload",
+                    });
                     return;
                 }
                 next(err);
@@ -141,7 +144,9 @@ export class HttpServer {
             case "OK":
                 return res.status(HTTP_OK).json(result.result ?? null);
             case "NOT_FOUND":
-                return res.status(HTTP_NOT_FOUND).json({ error: result.message });
+                return res
+                    .status(HTTP_NOT_FOUND)
+                    .json({ error: result.message });
             case "INVALID_PARAMS":
                 return res
                     .status(HTTP_BAD_REQUEST)
@@ -153,7 +158,6 @@ export class HttpServer {
         }
     };
 
-    /** Close the HTTP server. */
     close(): Promise<void> {
         return new Promise((resolve) => {
             if (this.server) this.server.close(() => resolve());
@@ -161,13 +165,12 @@ export class HttpServer {
         });
     }
 
-    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
         if (!this.server) {
-            throw new Error("boundPort accessed before HttpServer.start() completed");
+            throw new Error(
+                "boundPort accessed before HttpServer.start() completed",
+            );
         }
         return (this.server.address() as AddressInfo).port;
     }
 }
-
-

@@ -12,6 +12,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { Ajv, type ValidateFunction } from "ajv";
 import type { Bridge } from "./uxpBridge.js";
+import type { ManagedServer } from "./server.js";
 import {
     type OpenAPIOperation,
     loadAndIndexAllOperations,
@@ -27,7 +28,7 @@ import {
     logAndExit,
 } from "../log.js";
 
-export class MCPServer {
+export class MCPServer implements ManagedServer {
     private readonly operations: Map<string, OpenAPIOperation>;
     private readonly ajv = new Ajv();
     private readonly validators = new Map<string, ValidateFunction>();
@@ -321,7 +322,6 @@ export class MCPServer {
         });
     }
 
-    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
         return (this.httpServer!.address() as AddressInfo).port;
     }

@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import type { ResponseStatus } from "premiereremote-shared";
 import { Ajv, type ValidateFunction } from "ajv";
 import type { Bridge } from "./uxpBridge.js";
+import type { ManagedServer } from "./server.js";
 import {
     type OpenAPIOperation,
     loadAndIndexAllOperations,
@@ -36,7 +37,7 @@ interface WsResponse {
     code?: ResponseStatus;
 }
 
-export class WsServer {
+export class WsServer implements ManagedServer {
     private wss: WebSocketServer | null = null;
     private readonly ajv = new Ajv();
     private readonly validators = new Map<string, ValidateFunction>();
@@ -84,7 +85,6 @@ export class WsServer {
         return listening;
     }
 
-    /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
         return (this.wss!.address() as AddressInfo).port;
     }
