@@ -2,15 +2,14 @@ import { WebSocketServer, WebSocket, type RawData } from "ws";
 import type { AddressInfo } from "net";
 import { randomUUID } from "crypto";
 import type { ResponseStatus } from "premiereremote-shared";
-import { Ajv, type ValidateFunction } from "ajv";
+import type { ValidateFunction } from "ajv";
 import type { Bridge } from "./uxpBridge.js";
 import type { ManagedServer } from "./server.js";
 import {
     type OpenAPIOperation,
-    loadAndIndexAllOperations,
+    loadOperationsAndValidators,
     buildOperationParameterSchema,
-    compileOperationValidator,
-    formatValidationErrors,
+    validateCall,
 } from "../openapi.js";
 import {
     log,
@@ -41,20 +40,17 @@ interface WsResponse {
 
 export class WsServer implements ManagedServer {
     private wss: WebSocketServer | null = null;
-    private readonly ajv = new Ajv();
-    private readonly validators = new Map<string, ValidateFunction>();
     private readonly operations: Map<string, OpenAPIOperation>;
+    private readonly validators: Map<string, ValidateFunction>;
 
     constructor(
         readonly port: number,
         openApiSpecPath: string,
         private readonly bridge: Bridge,
     ) {
-        this.operations = loadAndIndexAllOperations(openApiSpecPath);
-        for (const [operationId, operation] of this.operations) {
-            const validator = compileOperationValidator(this.ajv, operation);
-            if (validator) this.validators.set(operationId, validator);
-        }
+        const loaded = loadOperationsAndValidators(openApiSpecPath);
+        this.operations = loaded.operations;
+        this.validators = loaded.validators;
     }
 
     start(): Promise<void> {
@@ -142,50 +138,24 @@ export class WsServer implements ManagedServer {
         }
 
         const args = message.args ?? {};
-        const validationError = this.validateAction(id, message.action, args);
-        if (validationError) {
-            this.sendResponse(ws, validationError);
+        const failure = validateCall(
+            this.operations,
+            this.validators,
+            message.action,
+            args,
+            this.bridge.isConnected(),
+        );
+        if (failure) {
+            this.sendResponse(ws, {
+                id,
+                status: "error",
+                error: failure.message,
+                code: failure.status,
+            });
             return;
         }
 
         this.sendResponse(ws, await this.callAction(id, message.action, args));
-    }
-
-    /** Checks the action is known, valid, and deliverable; returns an error response if not. */
-    private validateAction(
-        id: string,
-        action: string,
-        args: Record<string, unknown>,
-    ): WsResponse | null {
-        if (!this.operations.has(action)) {
-            return {
-                id,
-                status: "error",
-                error: `Unknown operation: ${action}`,
-                code: "NOT_FOUND",
-            };
-        }
-
-        const validate = this.validators.get(action);
-        if (validate && !validate(args)) {
-            return {
-                id,
-                status: "error",
-                error: `Validation error: ${formatValidationErrors(validate.errors)}`,
-                code: "INVALID_PARAMS",
-            };
-        }
-
-        if (!this.bridge.isConnected()) {
-            return {
-                id,
-                status: "error",
-                error: "Premiere Pro is not connected",
-                code: "INTERNAL_ERROR",
-            };
-        }
-
-        return null;
     }
 
     /** Forwards an already-validated action to the UXP bridge and builds the response. */

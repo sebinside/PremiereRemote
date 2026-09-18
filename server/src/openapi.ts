@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
-import type { Ajv, ValidateFunction, ErrorObject } from "ajv";
+import { Ajv, type ValidateFunction, type ErrorObject } from "ajv";
+import type { ResponseStatus } from "premiereremote-shared";
 
 /** Abstract representation of an OpenAPI operation, as parsed from `openapi.json`. Not the full specification, limited to what's needed by the servers. */
 export interface OpenAPIOperation {
@@ -78,6 +79,61 @@ export function compileOperationValidator(
     return Object.keys(properties).length > 0
         ? ajv.compile({ type: "object", properties, required })
         : null;
+}
+
+/** Loads an openapi.json's operations and compiles an AJV validator for each one that takes params. */
+export function loadOperationsAndValidators(specPath: string): {
+    operations: Map<string, OpenAPIOperation>;
+    validators: Map<string, ValidateFunction>;
+} {
+    const operations = loadAndIndexAllOperations(specPath);
+    const ajv = new Ajv();
+    const validators = new Map<string, ValidateFunction>();
+    for (const [operationId, operation] of operations) {
+        const validator = compileOperationValidator(ajv, operation);
+        if (validator) validators.set(operationId, validator);
+    }
+    return { operations, validators };
+}
+
+/** A call that failed validation, with the status/message a server should report to its client. */
+export interface CallValidationFailure {
+    status: ResponseStatus;
+    message: string;
+}
+
+/**
+ * Checks that an action is known, its args pass validation, and the UXP bridge is connected —
+ * the same three checks every transport (WS, MCP) must make before forwarding a call.
+ * Returns the failure to report, or `null` if the call may proceed.
+ */
+export function validateCall(
+    operations: Map<string, OpenAPIOperation>,
+    validators: Map<string, ValidateFunction>,
+    action: string,
+    args: Record<string, unknown>,
+    isBridgeConnected: boolean,
+): CallValidationFailure | null {
+    if (!operations.has(action)) {
+        return { status: "NOT_FOUND", message: `Unknown operation: ${action}` };
+    }
+
+    const validate = validators.get(action);
+    if (validate && !validate(args)) {
+        return {
+            status: "INVALID_PARAMS",
+            message: `Validation error: ${formatValidationErrors(validate.errors)}`,
+        };
+    }
+
+    if (!isBridgeConnected) {
+        return {
+            status: "INTERNAL_ERROR",
+            message: "Premiere Pro is not connected",
+        };
+    }
+
+    return null;
 }
 
 /** Formats AJV errors the same way everywhere validation runs (HTTP, WS, MCP). */

@@ -10,15 +10,14 @@ import {
     isInitializeRequest,
     type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Ajv, type ValidateFunction } from "ajv";
+import type { ValidateFunction } from "ajv";
 import type { Bridge } from "./uxpBridge.js";
 import type { ManagedServer } from "./server.js";
 import {
     type OpenAPIOperation,
-    loadAndIndexAllOperations,
+    loadOperationsAndValidators,
     buildOperationParameterSchema,
-    compileOperationValidator,
-    formatValidationErrors,
+    validateCall,
 } from "../openapi.js";
 import {
     log,
@@ -33,8 +32,7 @@ type ToolCallResult = { content: Array<{ type: "text"; text: string }> };
 
 export class MCPServer implements ManagedServer {
     private readonly operations: Map<string, OpenAPIOperation>;
-    private readonly ajv = new Ajv();
-    private readonly validators = new Map<string, ValidateFunction>();
+    private readonly validators: Map<string, ValidateFunction>;
     private readonly app: express.Express;
     private httpServer: HttpServer | null = null;
     private readonly transports = new Map<
@@ -47,11 +45,9 @@ export class MCPServer implements ManagedServer {
         openApiSpecPath: string,
         private readonly bridge: Bridge,
     ) {
-        this.operations = loadAndIndexAllOperations(openApiSpecPath);
-        for (const [operationId, operation] of this.operations) {
-            const validator = compileOperationValidator(this.ajv, operation);
-            if (validator) this.validators.set(operationId, validator);
-        }
+        const loaded = loadOperationsAndValidators(openApiSpecPath);
+        this.operations = loaded.operations;
+        this.validators = loaded.validators;
 
         log("MCP", `Loaded ${this.operations.size} tools`);
 
@@ -243,8 +239,19 @@ export class MCPServer implements ManagedServer {
         name: string,
         args: Record<string, unknown>,
     ): Promise<ToolCallResult> {
-        const validationError = this.validateToolCall(name, args);
-        if (validationError) return validationError;
+        const failure = validateCall(
+            this.operations,
+            this.validators,
+            name,
+            args,
+            this.bridge.isConnected(),
+        );
+        if (failure) {
+            return this.toolResult({
+                error: failure.message,
+                status: failure.status,
+            });
+        }
 
         try {
             logIncomingCall("MCP", name, args);
@@ -262,36 +269,6 @@ export class MCPServer implements ManagedServer {
                 err instanceof Error ? err.message : "Unknown error";
             return this.toolResult({ error: `Execution failed: ${message}` });
         }
-    }
-
-    /** Checks the call is known, valid, and deliverable; returns an error result if not. */
-    private validateToolCall(
-        name: string,
-        args: Record<string, unknown>,
-    ): ToolCallResult | null {
-        if (!this.operations.has(name)) {
-            return this.toolResult({
-                error: `Unknown operation: ${name}`,
-                status: "NOT_FOUND",
-            });
-        }
-
-        const validate = this.validators.get(name);
-        if (validate && !validate(args)) {
-            return this.toolResult({
-                error: `Validation error: ${formatValidationErrors(validate.errors)}`,
-                status: "INVALID_PARAMS",
-            });
-        }
-
-        if (!this.bridge.isConnected()) {
-            return this.toolResult({
-                error: "Premiere Pro is not connected",
-                status: "INTERNAL_ERROR",
-            });
-        }
-
-        return null;
     }
 
     /** Creates a tool call result from a payload into a JSON-RPC response. */
