@@ -10,6 +10,9 @@ import { UXP_REQUEST_TIMEOUT_MS } from "premiereremote-shared/config";
 import type { ManagedServer } from "./server.js";
 import { log, logError, logAndExit } from "../log.js";
 
+/** WebSocket close code for "Policy Violation" */
+const CLOSE_POLICY_VIOLATION = 1008;
+
 /** A bridge between the server and the UXP plugin. */
 export interface Bridge {
     isConnected(): boolean;
@@ -46,6 +49,18 @@ export class UxpBridge implements Bridge, ManagedServer {
         });
 
         wss.on("connection", (ws) => {
+            if (this.uxpSocket?.readyState === WebSocket.OPEN) {
+                logError(
+                    "UXP",
+                    "rejected a new Premiere connection; only one is supported at a time",
+                );
+                ws.close(
+                    CLOSE_POLICY_VIOLATION,
+                    "Only one Premiere connection is allowed",
+                );
+                return;
+            }
+
             log("UXP", "plugin connected");
             this.uxpSocket = ws;
 

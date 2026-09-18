@@ -18,6 +18,14 @@ function waitForMessage(ws: WebSocket): Promise<Record<string, unknown>> {
     });
 }
 
+function waitForClose(ws: WebSocket): Promise<{ code: number; reason: string }> {
+    return new Promise((resolve) => {
+        ws.once("close", (code, reason) => {
+            resolve({ code, reason: reason.toString() });
+        });
+    });
+}
+
 describe("UxpBridge", () => {
     let bridge: UxpBridge;
     let panel: WebSocket | undefined;
@@ -53,6 +61,22 @@ describe("UxpBridge", () => {
             const client = await connectFakePanel();
             client.close();
             await vi.waitFor(() => expect(bridge.isConnected()).toBe(false));
+        });
+    });
+
+    describe("connection limit", () => {
+        it("rejects a second panel connection while one is already open", async () => {
+            bridge = new UxpBridge(0);
+            await bridge.start();
+            await connectFakePanel();
+
+            const second = new WebSocket(`ws://localhost:${bridge.boundPort}`);
+            await waitForOpen(second);
+            const { code, reason } = await waitForClose(second);
+
+            expect(code).toBe(1008);
+            expect(reason).toBe("Only one Premiere connection is allowed");
+            expect(bridge.isConnected()).toBe(true);
         });
     });
 
