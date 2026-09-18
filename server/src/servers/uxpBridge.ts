@@ -97,7 +97,12 @@ export class UxpBridge implements Bridge, ManagedServer {
     }
 
     get boundPort(): number {
-        return (this.wss!.address() as AddressInfo).port;
+        if (!this.wss) {
+            throw new Error(
+                "boundPort accessed before UxpBridge.start() completed",
+            );
+        }
+        return (this.wss.address() as AddressInfo).port;
     }
 
     isConnected(): boolean {

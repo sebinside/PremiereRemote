@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { AddressInfo } from "node:net";
 import type { Server as HttpServer } from "node:http";
 import express, { type Request, type Response } from "express";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
     ListToolsRequestSchema,
@@ -27,6 +27,9 @@ import {
     logOutgoingResult,
     logAndExit,
 } from "../log.js";
+
+/** Represents the result of a tool call as a JSON-RPC response. */
+type ToolCallResult = { content: Array<{ type: "text"; text: string }> };
 
 export class MCPServer implements ManagedServer {
     private readonly operations: Map<string, OpenAPIOperation>;
@@ -58,7 +61,6 @@ export class MCPServer implements ManagedServer {
     }
 
     async start(): Promise<void> {
-        // Transports are created lazily per session in setupRoutes(); nothing to connect here.
         return new Promise((resolve) => {
             this.httpServer = this.app
                 .listen(this.port, () => {
@@ -89,12 +91,112 @@ export class MCPServer implements ManagedServer {
     }
 
     get boundPort(): number {
-        return (this.httpServer!.address() as AddressInfo).port;
+        if (!this.httpServer) {
+            throw new Error(
+                "boundPort accessed before MCPServer.start() completed",
+            );
+        }
+        return (this.httpServer.address() as AddressInfo).port;
     }
 
+    /** Sets up the Express routes for MCP and SSE endpoints, as well as health check. */
+    private setupRoutes(): void {
+        for (const path of ["/mcp", "/sse"]) {
+            this.app.post(path, this.handlePost);
+            this.app.get(path, this.handleSessionRequest);
+            this.app.delete(path, this.handleSessionRequest);
+        }
+
+        this.app.get("/health", (_req: Request, res: Response) => {
+            res.json({
+                status: "ok",
+                tools: this.operations.size,
+                sessions: this.transports.size,
+                premiereConnected: this.bridge.isConnected(),
+            });
+        });
+    }
+
+    // POST: JSON-RPC messages. A request without a session id must be `initialize`,
+    // which spins up a new transport + Server pair; everything else reuses one by id.
+    private handlePost = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const sessionId = req.headers["mcp-session-id"] as
+                | string
+                | undefined;
+            let transport = sessionId
+                ? this.transports.get(sessionId)
+                : undefined;
+
+            if (!transport) {
+                if (sessionId || !isInitializeRequest(req.body)) {
+                    res.status(400).json({
+                        jsonrpc: "2.0",
+                        error: {
+                            code: -32000,
+                            message: "Bad Request: no valid session",
+                        },
+                        id: null,
+                    });
+                    return;
+                }
+
+                transport = new StreamableHTTPServerTransport({
+                    sessionIdGenerator: () => randomUUID(),
+                    onsessioninitialized: (id) => {
+                        this.transports.set(id, transport!);
+                        log("MCP", `session initialized: ${id}`);
+                    },
+                    onsessionclosed: (id) => {
+                        this.transports.delete(id);
+                        log("MCP", `session closed: ${id}`);
+                    },
+                });
+                transport.onclose = () => {
+                    if (transport!.sessionId)
+                        this.transports.delete(transport!.sessionId);
+                };
+
+                await this.createServer().connect(transport);
+            }
+
+            await transport.handleRequest(req, res, req.body);
+        } catch (err) {
+            logError("MCP", "error handling request:", err);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    error: "Failed to process request",
+                });
+            }
+        }
+    };
+
+    // GET: server-initiated SSE stream. DELETE: explicit session teardown. Both need a session.
+    private handleSessionRequest = async (
+        req: Request,
+        res: Response,
+    ): Promise<void> => {
+        const sessionId = req.headers["mcp-session-id"] as string | undefined;
+        const transport = sessionId
+            ? this.transports.get(sessionId)
+            : undefined;
+        if (!transport) {
+            res.status(400).send("Invalid or missing session id");
+            return;
+        }
+        try {
+            await transport.handleRequest(req, res, req.body);
+        } catch (err) {
+            logError("MCP", "error handling session request:", err);
+            if (!res.headersSent) {
+                res.status(500).json({ error: "Failed to handle request" });
+            }
+        }
+    };
+
     /** Builds a fresh MCP Server with the tool handlers registered. One per session. */
-    private createServer(): Server {
-        const server = new Server(
+    private createServer() {
+        const { server } = new McpServer(
             { name: "PremiereRemote", version: "1.0.0" },
             { capabilities: { tools: {} } },
         );
@@ -113,106 +215,7 @@ export class MCPServer implements ManagedServer {
         return server;
     }
 
-    private setupRoutes(): void {
-        // POST: JSON-RPC messages. A request without a session id must be `initialize`,
-        // which spins up a new transport + Server pair; everything else reuses one by id.
-        const handlePost = async (
-            req: Request,
-            res: Response,
-        ): Promise<void> => {
-            try {
-                const sessionId = req.headers["mcp-session-id"] as
-                    | string
-                    | undefined;
-                let transport = sessionId
-                    ? this.transports.get(sessionId)
-                    : undefined;
-
-                if (!transport) {
-                    if (sessionId || !isInitializeRequest(req.body)) {
-                        res.status(400).json({
-                            jsonrpc: "2.0",
-                            error: {
-                                code: -32000,
-                                message: "Bad Request: no valid session",
-                            },
-                            id: null,
-                        });
-                        return;
-                    }
-
-                    transport = new StreamableHTTPServerTransport({
-                        sessionIdGenerator: () => randomUUID(),
-                        onsessioninitialized: (id) => {
-                            this.transports.set(id, transport!);
-                            log("MCP", `session initialized: ${id}`);
-                        },
-                        onsessionclosed: (id) => {
-                            this.transports.delete(id);
-                            log("MCP", `session closed: ${id}`);
-                        },
-                    });
-                    transport.onclose = () => {
-                        if (transport!.sessionId)
-                            this.transports.delete(transport!.sessionId);
-                    };
-
-                    await this.createServer().connect(transport);
-                }
-
-                await transport.handleRequest(req, res, req.body);
-            } catch (err) {
-                logError("MCP", "error handling request:", err);
-                if (!res.headersSent) {
-                    res.status(500).json({
-                        error: "Failed to process request",
-                    });
-                }
-            }
-        };
-
-        // GET: server-initiated SSE stream. DELETE: explicit session teardown. Both need a session.
-        const handleSessionRequest = async (
-            req: Request,
-            res: Response,
-        ): Promise<void> => {
-            const sessionId = req.headers["mcp-session-id"] as
-                | string
-                | undefined;
-            const transport = sessionId
-                ? this.transports.get(sessionId)
-                : undefined;
-            if (!transport) {
-                res.status(400).send("Invalid or missing session id");
-                return;
-            }
-            try {
-                await transport.handleRequest(req, res, req.body);
-            } catch (err) {
-                logError("MCP", "error handling session request:", err);
-                if (!res.headersSent) {
-                    res.status(500).json({ error: "Failed to handle request" });
-                }
-            }
-        };
-
-        for (const path of ["/mcp", "/sse"]) {
-            this.app.post(path, handlePost);
-            this.app.get(path, handleSessionRequest);
-            this.app.delete(path, handleSessionRequest);
-        }
-
-        // Health check endpoint
-        this.app.get("/health", (_req: Request, res: Response) => {
-            res.json({
-                status: "ok",
-                tools: this.operations.size,
-                sessions: this.transports.size,
-                premiereConnected: this.bridge.isConnected(),
-            });
-        });
-    }
-
+    /** Converts an OpenAPI operation to an MCP tool. */
     private toTool(operation: OpenAPIOperation): Tool {
         const { properties, required } =
             buildOperationParameterSchema(operation);
@@ -235,91 +238,64 @@ export class MCPServer implements ManagedServer {
         };
     }
 
+    /** Calls a tool by name with the given arguments. This includes validation, bridge communcation, and error handling. */
     private async callTool(
         name: string,
         args: Record<string, unknown>,
-    ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
-        if (!this.operations.has(name)) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify({
-                            error: `Unknown operation: ${name}`,
-                            status: "NOT_FOUND",
-                        }),
-                    },
-                ],
-            };
-        }
-
-        const validate = this.validators.get(name);
-        if (validate && !validate(args)) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify({
-                            error: `Validation error: ${formatValidationErrors(validate.errors)}`,
-                            status: "INVALID_PARAMS",
-                        }),
-                    },
-                ],
-            };
-        }
-
-        if (!this.bridge.isConnected()) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify({
-                            error: "Premiere Pro is not connected",
-                            status: "INTERNAL_ERROR",
-                        }),
-                    },
-                ],
-            };
-        }
+    ): Promise<ToolCallResult> {
+        const validationError = this.validateToolCall(name, args);
+        if (validationError) return validationError;
 
         try {
             logIncomingCall("MCP", name, args);
             const result = await this.bridge.sendToUxp(name, args, "mcp");
             logOutgoingResult("MCP", name, result);
-            if (result.status === "OK") {
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: JSON.stringify(result.result ?? null),
-                        },
-                    ],
-                };
-            }
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify({
-                            error: result.message,
-                            status: result.status,
-                        }),
-                    },
-                ],
-            };
+
+            return result.status === "OK"
+                ? this.toolResult(result.result ?? null)
+                : this.toolResult({
+                      error: result.message,
+                      status: result.status,
+                  });
         } catch (err) {
             const message =
                 err instanceof Error ? err.message : "Unknown error";
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify({
-                            error: `Execution failed: ${message}`,
-                        }),
-                    },
-                ],
-            };
+            return this.toolResult({ error: `Execution failed: ${message}` });
         }
+    }
+
+    /** Checks the call is known, valid, and deliverable; returns an error result if not. */
+    private validateToolCall(
+        name: string,
+        args: Record<string, unknown>,
+    ): ToolCallResult | null {
+        if (!this.operations.has(name)) {
+            return this.toolResult({
+                error: `Unknown operation: ${name}`,
+                status: "NOT_FOUND",
+            });
+        }
+
+        const validate = this.validators.get(name);
+        if (validate && !validate(args)) {
+            return this.toolResult({
+                error: `Validation error: ${formatValidationErrors(validate.errors)}`,
+                status: "INVALID_PARAMS",
+            });
+        }
+
+        if (!this.bridge.isConnected()) {
+            return this.toolResult({
+                error: "Premiere Pro is not connected",
+                status: "INTERNAL_ERROR",
+            });
+        }
+
+        return null;
+    }
+
+    /** Creates a tool call result from a payload into a JSON-RPC response. */
+    private toolResult(payload: unknown): ToolCallResult {
+        return { content: [{ type: "text", text: JSON.stringify(payload) }] };
     }
 }

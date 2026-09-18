@@ -93,7 +93,12 @@ export class WsServer implements ManagedServer {
     }
 
     get boundPort(): number {
-        return (this.wss!.address() as AddressInfo).port;
+        if (!this.wss) {
+            throw new Error(
+                "boundPort accessed before WsServer.start() completed",
+            );
+        }
+        return (this.wss.address() as AddressInfo).port;
     }
 
     private rawDataToString(data: RawData): string {
