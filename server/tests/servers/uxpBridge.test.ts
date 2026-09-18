@@ -18,7 +18,9 @@ function waitForMessage(ws: WebSocket): Promise<Record<string, unknown>> {
     });
 }
 
-function waitForClose(ws: WebSocket): Promise<{ code: number; reason: string }> {
+function waitForClose(
+    ws: WebSocket,
+): Promise<{ code: number; reason: string }> {
     return new Promise((resolve) => {
         ws.once("close", (code, reason) => {
             resolve({ code, reason: reason.toString() });
