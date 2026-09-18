@@ -1,4 +1,4 @@
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer, WebSocket, type RawData } from "ws";
 import type { AddressInfo } from "net";
 import { randomUUID } from "crypto";
 import type {
@@ -6,9 +6,11 @@ import type {
     OutgoingMessage,
     SourceType,
 } from "premiereremote-shared";
+import { UXP_REQUEST_TIMEOUT_MS } from "premiereremote-shared/config";
 import type { ManagedServer } from "./server.js";
 import { log, logError, logAndExit } from "../log.js";
 
+/** A bridge between the server and the UXP plugin. */
 export interface Bridge {
     isConnected(): boolean;
     sendToUxp(
@@ -18,11 +20,10 @@ export interface Bridge {
     ): Promise<OutgoingMessage>;
 }
 
-const REQUEST_TIMEOUT_MS = 60_000;
-
+/** A request that is pending a response from the UXP plugin. */
 type PendingRequest = {
     resolve: (msg: OutgoingMessage) => void;
-    timer: ReturnType<typeof setTimeout>;
+    timer: NodeJS.Timeout;
 };
 
 export class UxpBridge implements Bridge, ManagedServer {
@@ -32,10 +33,9 @@ export class UxpBridge implements Bridge, ManagedServer {
 
     constructor(
         readonly port: number,
-        private readonly requestTimeoutMs: number = REQUEST_TIMEOUT_MS,
+        private readonly requestTimeoutMs: number = UXP_REQUEST_TIMEOUT_MS,
     ) {}
 
-    /** Binds the port and starts accepting UXP connections. Resolves once listening. */
     start(): Promise<void> {
         const wss = new WebSocketServer({ port: this.port });
         this.wss = wss;
@@ -49,33 +49,8 @@ export class UxpBridge implements Bridge, ManagedServer {
             log("UXP", "plugin connected");
             this.uxpSocket = ws;
 
-            ws.on("message", (data) => {
-                let msg: OutgoingMessage;
-                try {
-                    msg = JSON.parse(data.toString()) as OutgoingMessage;
-                } catch {
-                    logError(
-                        "UXP",
-                        "failed to parse message:",
-                        data.toString(),
-                    );
-                    return;
-                }
-
-                const req = this.pending.get(msg.id);
-                if (req) {
-                    clearTimeout(req.timer);
-                    this.pending.delete(msg.id);
-                    req.resolve(msg);
-                }
-            });
-
-            ws.on("close", () => {
-                log("UXP", "plugin disconnected");
-                this.uxpSocket = null;
-                this.rejectAllPending("UXP connection closed");
-            });
-
+            ws.on("message", this.handleUxpMessage);
+            ws.on("close", this.handleUxpClose);
             ws.on("error", (err) => logError("UXP", "socket error:", err));
         });
 
@@ -105,6 +80,7 @@ export class UxpBridge implements Bridge, ManagedServer {
         return (this.wss.address() as AddressInfo).port;
     }
 
+    /** Returns true if the UXP plugin is currently connected. */
     isConnected(): boolean {
         return (
             this.uxpSocket !== null &&
@@ -112,12 +88,14 @@ export class UxpBridge implements Bridge, ManagedServer {
         );
     }
 
+    /** Sends a message to the UXP plugin and returns a promise that resolves with the response. */
     sendToUxp(
         actionId: string,
         params: Record<string, unknown>,
         sourceType: SourceType,
     ): Promise<OutgoingMessage> {
-        if (!this.isConnected()) {
+        const socket = this.uxpSocket;
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
             return Promise.resolve({
                 id: randomUUID(),
                 status: "INTERNAL_ERROR",
@@ -146,10 +124,36 @@ export class UxpBridge implements Bridge, ManagedServer {
                 ...(Object.keys(params).length > 0 ? { params } : {}),
             };
 
-            this.uxpSocket!.send(JSON.stringify(msg));
+            socket.send(JSON.stringify(msg));
         });
     }
 
+    /** Handles a message received from the UXP plugin. */
+    private handleUxpMessage = (data: RawData): void => {
+        let msg: OutgoingMessage;
+        try {
+            msg = JSON.parse(data.toString()) as OutgoingMessage;
+        } catch {
+            logError("UXP", "failed to parse message:", data.toString());
+            return;
+        }
+
+        const req = this.pending.get(msg.id);
+        if (req) {
+            clearTimeout(req.timer);
+            this.pending.delete(msg.id);
+            req.resolve(msg);
+        }
+    };
+
+    /** Handles the UXP plugin disconnecting. Rejects all pending requests. */
+    private handleUxpClose = (): void => {
+        log("UXP", "plugin disconnected");
+        this.uxpSocket = null;
+        this.rejectAllPending("UXP connection closed");
+    };
+
+    /** Iterates over all pending requests and rejects them with the given reason. */
     private rejectAllPending(reason: string): void {
         for (const [id, req] of this.pending) {
             clearTimeout(req.timer);
