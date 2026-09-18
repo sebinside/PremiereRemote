@@ -4,13 +4,20 @@ import type { Context } from "openapi-backend";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import type { AddressInfo } from "net";
+import type { Server } from "http";
 import type { Bridge } from "./uxpBridge.js";
 import { formatValidationErrors } from "../openapi.js";
 import { log, logIncomingCall, logOutgoingResult, logAndExit } from "../log.js";
 
+const HTTP_OK = 200;
+const HTTP_BAD_REQUEST = 400;
+const HTTP_NOT_FOUND = 404;
+const HTTP_INTERNAL_SERVER_ERROR = 500;
+const HTTP_SERVICE_UNAVAILABLE = 503;
+
 export class HttpServer {
     private readonly app: express.Express;
-    private server: ReturnType<typeof this.app.listen> | null = null;
+    private server: Server | null = null;
 
     constructor(
         readonly port: number,
@@ -25,12 +32,12 @@ export class HttpServer {
         this.app.use(
             (
                 err: unknown,
-                _req: express.Request,
+                _: express.Request,
                 res: express.Response,
                 next: express.NextFunction,
             ) => {
                 if (err instanceof SyntaxError && "body" in err) {
-                    res.status(400).json({ error: "Invalid JSON payload" });
+                    res.status(HTTP_BAD_REQUEST).json({ error: "Invalid JSON payload" });
                     return;
                 }
                 next(err);
@@ -47,72 +54,11 @@ export class HttpServer {
         this.app.use("/docs", swaggerUi.serve, swaggerUi.setup(apiDoc));
 
         const api = new OpenAPIBackend({ definition: this.openApiSpecPath });
-
         api.register({
-            notFound: (
-                _c: Context,
-                req: express.Request,
-                res: express.Response,
-            ) => {
-                res.status(404).json({
-                    error: `Unknown operation: ${req.method} ${req.path}`,
-                });
-            },
-
-            validationFail: (
-                c: Context,
-                _req: express.Request,
-                res: express.Response,
-            ) => {
-                res.status(400).json({
-                    error: `Validation error: ${formatValidationErrors(c.validation.errors)}`,
-                });
-            },
-
-            notImplemented: async (
-                c: Context,
-                _req: express.Request,
-                res: express.Response,
-            ) => {
-                if (!this.bridge.isConnected()) {
-                    return res
-                        .status(503)
-                        .json({ error: "Premiere Pro is not connected" });
-                }
-
-                const actionId = c.operation.operationId!;
-
-                // Merge path params, query params, and body into a flat params object
-                const params: Record<string, unknown> = {
-                    ...(c.request.params as Record<string, unknown>),
-                    ...(c.request.query as Record<string, unknown>),
-                    ...(c.request.body && typeof c.request.body === "object"
-                        ? (c.request.body as Record<string, unknown>)
-                        : {}),
-                };
-
-                logIncomingCall("HTTP", actionId, params);
-
-                const result = await this.bridge.sendToUxp(
-                    actionId,
-                    params,
-                    "http",
-                );
-                logOutgoingResult("HTTP", actionId, result);
-
-                switch (result.status) {
-                    case "OK":
-                        return res.status(200).json(result.result ?? null);
-                    case "NOT_FOUND":
-                        return res.status(404).json({ error: result.message });
-                    case "INVALID_PARAMS":
-                        return res.status(400).json({ error: result.message });
-                    case "INTERNAL_ERROR":
-                        return res.status(500).json({ error: result.message });
-                }
-            },
+            notFound: this.handleNotFound,
+            validationFail: this.handleValidationFail,
+            notImplemented: this.handleNotImplemented,
         });
-
         await api.init();
 
         this.app.use((req, res, next) => {
@@ -137,6 +83,77 @@ export class HttpServer {
         });
     }
 
+    private handleNotFound = (
+        _: Context,
+        req: express.Request,
+        res: express.Response,
+    ): void => {
+        res.status(HTTP_NOT_FOUND).json({
+            error: `Unknown operation: ${req.method} ${req.path}`,
+        });
+    };
+
+    private handleValidationFail = (
+        c: Context,
+        _: express.Request,
+        res: express.Response,
+    ): void => {
+        res.status(HTTP_BAD_REQUEST).json({
+            error: `Validation error: ${formatValidationErrors(c.validation.errors)}`,
+        });
+    };
+
+    // Repurposed as the generic catch-all that proxies each request to Premiere Pro.
+    // The set of operationIds lives in openapi.json and isn't known here,
+    // so we can't hardcode a handler per operationId
+    private handleNotImplemented = async (
+        c: Context,
+        _: express.Request,
+        res: express.Response,
+    ): Promise<express.Response | void> => {
+        if (!this.bridge.isConnected()) {
+            return res
+                .status(HTTP_SERVICE_UNAVAILABLE)
+                .json({ error: "Premiere Pro is not connected" });
+        }
+
+        const actionId = c.operation.operationId;
+        if (!actionId) {
+            return res
+                .status(HTTP_INTERNAL_SERVER_ERROR)
+                .json({ error: "Matched operation has no operationId" });
+        }
+
+        // Merge path params, query params, and body into a flat params object
+        const params: Record<string, unknown> = {
+            ...(c.request.params as Record<string, unknown>),
+            ...(c.request.query as Record<string, unknown>),
+            ...(c.request.body && typeof c.request.body === "object"
+                ? (c.request.body as Record<string, unknown>)
+                : {}),
+        };
+
+        logIncomingCall("HTTP", actionId, params);
+        const result = await this.bridge.sendToUxp(actionId, params, "http");
+        logOutgoingResult("HTTP", actionId, result);
+
+        switch (result.status) {
+            case "OK":
+                return res.status(HTTP_OK).json(result.result ?? null);
+            case "NOT_FOUND":
+                return res.status(HTTP_NOT_FOUND).json({ error: result.message });
+            case "INVALID_PARAMS":
+                return res
+                    .status(HTTP_BAD_REQUEST)
+                    .json({ error: result.message });
+            case "INTERNAL_ERROR":
+                return res
+                    .status(HTTP_INTERNAL_SERVER_ERROR)
+                    .json({ error: result.message });
+        }
+    };
+
+    /** Close the HTTP server. */
     close(): Promise<void> {
         return new Promise((resolve) => {
             if (this.server) this.server.close(() => resolve());
@@ -146,6 +163,11 @@ export class HttpServer {
 
     /** The actual bound port — differs from the constructor's `port` when that was `0`. */
     get boundPort(): number {
-        return (this.server!.address() as AddressInfo).port;
+        if (!this.server) {
+            throw new Error("boundPort accessed before HttpServer.start() completed");
+        }
+        return (this.server.address() as AddressInfo).port;
     }
 }
+
+
