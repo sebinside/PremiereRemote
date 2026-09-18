@@ -23,11 +23,13 @@ import {
 /** Reserved action name for operation discovery — never a real operationId (those all contain "/"). */
 const LIST_ACTION = "$list";
 
+/** A valid message received from a WebSocket client. */
 interface WsMessage {
     action: string;
     args?: Record<string, unknown>;
 }
 
+/** A response to be sent back to a WebSocket client. */
 interface WsResponse {
     id: string;
     status: "ok" | "error";
@@ -55,7 +57,6 @@ export class WsServer implements ManagedServer {
         }
     }
 
-    /** Binds the port and starts accepting client connections. Resolves once listening. */
     start(): Promise<void> {
         const wss = new WebSocketServer({ port: this.port });
         this.wss = wss;
@@ -101,13 +102,114 @@ export class WsServer implements ManagedServer {
         return (this.wss.address() as AddressInfo).port;
     }
 
-    private rawDataToString(data: RawData): string {
-        if (Buffer.isBuffer(data)) return data.toString();
-        if (data instanceof ArrayBuffer) return Buffer.from(data).toString();
-        return Buffer.concat(data).toString();
+    /** Handles a message from a WebSocket client. */
+    private async handleMessage(ws: WebSocket, raw: RawData): Promise<void> {
+        const id = randomUUID();
+
+        let message: WsMessage;
+        try {
+            const text = Buffer.isBuffer(raw)
+                ? raw.toString()
+                : raw instanceof ArrayBuffer
+                  ? Buffer.from(raw).toString()
+                  : Buffer.concat(raw).toString();
+            message = JSON.parse(text) as WsMessage;
+        } catch {
+            this.sendResponse(ws, {
+                id,
+                status: "error",
+                error: "Invalid JSON payload",
+            });
+            return;
+        }
+
+        if (!message.action || typeof message.action !== "string") {
+            this.sendResponse(ws, {
+                id,
+                status: "error",
+                error: "Missing or invalid 'action' field",
+            });
+            return;
+        }
+
+        if (message.action === LIST_ACTION) {
+            this.sendResponse(ws, {
+                id,
+                status: "ok",
+                result: this.listOperations(),
+            });
+            return;
+        }
+
+        const args = message.args ?? {};
+        const validationError = this.validateAction(id, message.action, args);
+        if (validationError) {
+            this.sendResponse(ws, validationError);
+            return;
+        }
+
+        this.sendResponse(ws, await this.callAction(id, message.action, args));
     }
 
-    private send(ws: WebSocket, response: WsResponse): void {
+    /** Checks the action is known, valid, and deliverable; returns an error response if not. */
+    private validateAction(
+        id: string,
+        action: string,
+        args: Record<string, unknown>,
+    ): WsResponse | null {
+        if (!this.operations.has(action)) {
+            return {
+                id,
+                status: "error",
+                error: `Unknown operation: ${action}`,
+                code: "NOT_FOUND",
+            };
+        }
+
+        const validate = this.validators.get(action);
+        if (validate && !validate(args)) {
+            return {
+                id,
+                status: "error",
+                error: `Validation error: ${formatValidationErrors(validate.errors)}`,
+                code: "INVALID_PARAMS",
+            };
+        }
+
+        if (!this.bridge.isConnected()) {
+            return {
+                id,
+                status: "error",
+                error: "Premiere Pro is not connected",
+                code: "INTERNAL_ERROR",
+            };
+        }
+
+        return null;
+    }
+
+    /** Forwards an already-validated action to the UXP bridge and builds the response. */
+    private async callAction(
+        id: string,
+        action: string,
+        args: Record<string, unknown>,
+    ): Promise<WsResponse> {
+        logIncomingCall("WS", action, args);
+        const result = await this.bridge.sendToUxp(action, args, "ws");
+        logOutgoingResult("WS", action, result);
+
+        return result.status === "OK"
+            ? { id, status: "ok", result: result.result ?? null }
+            : {
+                  id,
+                  status: "error",
+                  error: result.message,
+                  code: result.status,
+              };
+    }
+
+    /** Sends a response back to the client. */
+    private sendResponse(ws: WebSocket, response: WsResponse): void {
         ws.send(JSON.stringify(response));
     }
 
@@ -125,83 +227,5 @@ export class WsServer implements ManagedServer {
             description: operation.description,
             ...buildOperationParameterSchema(operation),
         }));
-    }
-
-    private async handleMessage(ws: WebSocket, raw: RawData): Promise<void> {
-        const id = randomUUID();
-
-        let message: WsMessage;
-        try {
-            message = JSON.parse(this.rawDataToString(raw)) as WsMessage;
-        } catch {
-            this.send(ws, {
-                id,
-                status: "error",
-                error: "Invalid JSON payload",
-            });
-            return;
-        }
-
-        if (!message.action || typeof message.action !== "string") {
-            this.send(ws, {
-                id,
-                status: "error",
-                error: "Missing or invalid 'action' field",
-            });
-            return;
-        }
-
-        if (message.action === LIST_ACTION) {
-            this.send(ws, { id, status: "ok", result: this.listOperations() });
-            return;
-        }
-
-        if (!this.operations.has(message.action)) {
-            this.send(ws, {
-                id,
-                status: "error",
-                error: `Unknown operation: ${message.action}`,
-                code: "NOT_FOUND",
-            });
-            return;
-        }
-
-        const args = message.args ?? {};
-
-        const validate = this.validators.get(message.action);
-        if (validate && !validate(args)) {
-            this.send(ws, {
-                id,
-                status: "error",
-                error: `Validation error: ${formatValidationErrors(validate.errors)}`,
-                code: "INVALID_PARAMS",
-            });
-            return;
-        }
-
-        if (!this.bridge.isConnected()) {
-            this.send(ws, {
-                id,
-                status: "error",
-                error: "Premiere Pro is not connected",
-                code: "INTERNAL_ERROR",
-            });
-            return;
-        }
-
-        logIncomingCall("WS", message.action, args);
-        const result = await this.bridge.sendToUxp(message.action, args, "ws");
-        logOutgoingResult("WS", message.action, result);
-
-        if (result.status === "OK") {
-            this.send(ws, { id, status: "ok", result: result.result ?? null });
-        } else {
-            this.send(ws, {
-                id,
-                status: "error",
-                error: result.message,
-                code: result.status,
-            });
-        }
     }
 }
