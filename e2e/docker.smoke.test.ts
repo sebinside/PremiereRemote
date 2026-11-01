@@ -16,8 +16,8 @@ const REPO_ROOT = resolve(__dirname, "..");
 const COMPOSE_FILE = resolve(REPO_ROOT, "compose.yaml");
 const COMPOSE_ARGS = ["compose", "-f", COMPOSE_FILE, "-p", "premiereremote-e2e"];
 
-const HTTP_PORT = 42400;
-const INTERNAL_WS_PORT = 42401;
+const INTERNAL_WS_PORT = 42400;
+const HTTP_PORT = 42401;
 const READY_TIMEOUT_MS = 60_000;
 const BUILD_TIMEOUT_MS = 5 * 60_000;
 

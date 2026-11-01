@@ -42,9 +42,9 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/dist ./dist/
 COPY --from=api-gen /app/server/openapi.json ./openapi.json
 
-# HTTP API
-EXPOSE 42400
 # WebSocket (UXP plugin)
+EXPOSE 42400
+# HTTP API
 EXPOSE 42401
 # WebSocket (external clients)
 EXPOSE 42402
