@@ -2,8 +2,8 @@ import { WebSocketServer, WebSocket, type RawData } from "ws";
 import type { AddressInfo } from "net";
 import { randomUUID } from "crypto";
 import type {
-    IncomingMessage,
-    OutgoingMessage,
+    ClientMessage,
+    ServerMessage,
     SourceType,
 } from "premiereremote-shared";
 import { UXP_REQUEST_TIMEOUT_MS } from "premiereremote-shared/config";
@@ -20,12 +20,12 @@ export interface Bridge {
         actionId: string,
         params: Record<string, unknown>,
         sourceType: SourceType,
-    ): Promise<OutgoingMessage>;
+    ): Promise<ClientMessage>;
 }
 
 /** A request that is pending a response from the UXP plugin. */
 type PendingRequest = {
-    resolve: (msg: OutgoingMessage) => void;
+    resolve: (msg: ClientMessage) => void;
     timer: NodeJS.Timeout;
 };
 
@@ -108,7 +108,7 @@ export class UxpBridge implements Bridge, ManagedServer {
         actionId: string,
         params: Record<string, unknown>,
         sourceType: SourceType,
-    ): Promise<OutgoingMessage> {
+    ): Promise<ClientMessage> {
         const socket = this.uxpSocket;
         if (!socket || socket.readyState !== WebSocket.OPEN) {
             return Promise.resolve({
@@ -118,7 +118,7 @@ export class UxpBridge implements Bridge, ManagedServer {
             });
         }
 
-        return new Promise<OutgoingMessage>((resolve) => {
+        return new Promise<ClientMessage>((resolve) => {
             const id = randomUUID();
 
             const timer = setTimeout(() => {
@@ -132,7 +132,7 @@ export class UxpBridge implements Bridge, ManagedServer {
 
             this.pending.set(id, { resolve, timer });
 
-            const msg: IncomingMessage = {
+            const msg: ServerMessage = {
                 id,
                 actionId,
                 sourceType,
@@ -145,9 +145,9 @@ export class UxpBridge implements Bridge, ManagedServer {
 
     /** Handles a message received from the UXP plugin. */
     private handleUxpMessage = (data: RawData): void => {
-        let msg: OutgoingMessage;
+        let msg: ClientMessage;
         try {
-            msg = JSON.parse(data.toString()) as OutgoingMessage;
+            msg = JSON.parse(data.toString()) as ClientMessage;
         } catch {
             logError("UXP", "failed to parse message:", data.toString());
             return;

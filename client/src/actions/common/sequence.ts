@@ -38,7 +38,7 @@ export async function getActiveSequenceName(): Promise<string | null> {
 /**
  * A simple playground function that can be used to test Premiere Pro API.
  */
-export async function playground(): Promise<void> {
+export async function playingAroundWithSequenceItems(): Promise<void> {
     console.log("Playground function called");
 
     const project = await ppro.Project.getActiveProject();

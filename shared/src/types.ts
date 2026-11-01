@@ -4,14 +4,14 @@ export type ResponseStatus =
     | "INVALID_PARAMS"
     | "INTERNAL_ERROR";
 
-export interface IncomingMessage {
+export interface ServerMessage {
     id: string;
     actionId: string;
     sourceType: SourceType;
     params?: Record<string, unknown>;
 }
 
-export interface OutgoingMessage {
+export interface ClientMessage {
     id: string;
     status: ResponseStatus;
     result?: unknown;

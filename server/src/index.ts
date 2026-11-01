@@ -2,8 +2,8 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import {
     HTTP_PORT,
+    INTERNAL_WS_PORT,
     WS_PORT,
-    EXTERNAL_WS_PORT,
     MCP_PORT,
 } from "premiereremote-shared/config";
 import { HttpServer } from "./servers/httpServer.js";
@@ -15,9 +15,9 @@ import { log, logError } from "./log.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openApiSpecPath = resolve(__dirname, "../openapi.json");
 
-const uxpBridge = new UxpBridge(WS_PORT);
+const uxpBridge = new UxpBridge(INTERNAL_WS_PORT);
 const httpServer = new HttpServer(HTTP_PORT, openApiSpecPath, uxpBridge);
-const wsServer = new WsServer(EXTERNAL_WS_PORT, openApiSpecPath, uxpBridge);
+const wsServer = new WsServer(WS_PORT, openApiSpecPath, uxpBridge);
 const mcpServer = new MCPServer(MCP_PORT, openApiSpecPath, uxpBridge);
 
 const servers = [

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { WebSocket } from "ws";
-import type { OutgoingMessage } from "premiereremote-shared";
+import type { ClientMessage } from "premiereremote-shared";
 import { UxpBridge } from "../../src/servers/uxpBridge.js";
 
 function waitForOpen(ws: WebSocket): Promise<void> {
@@ -109,7 +109,7 @@ describe("UxpBridge", () => {
             expect(incoming.actionId).toBe("some/action");
             expect(incoming.params).toEqual({ foo: "bar" });
 
-            const reply: OutgoingMessage = {
+            const reply: ClientMessage = {
                 id: incoming.id as string,
                 status: "OK",
                 result: "done",

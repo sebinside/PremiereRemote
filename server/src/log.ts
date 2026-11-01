@@ -1,4 +1,4 @@
-import type { OutgoingMessage } from "premiereremote-shared";
+import type { ClientMessage } from "premiereremote-shared";
 
 /** Uniformly logs a server lifecycle message, e.g. `[UXP] plugin connected`. */
 export function log(server: string, message: string, ...args: unknown[]): void {
@@ -57,7 +57,7 @@ export function logIncomingCall(
 export function logOutgoingResult(
     server: string,
     actionId: string,
-    result: OutgoingMessage,
+    result: ClientMessage,
 ): void {
     // Intentionally not stringifying the result, to minimize spamming the console with large JSON blobs.
     log(server, `← ${actionId}`, result);

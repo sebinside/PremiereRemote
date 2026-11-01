@@ -1,14 +1,13 @@
 import { Registry, ParameterMetadata, UIInterface } from "./types.js";
-import type { IncomingMessage, OutgoingMessage } from "premiereremote-shared";
-import { WS_PORT } from "premiereremote-shared/config";
+import type { ClientMessage, ServerMessage } from "premiereremote-shared";
+import { INTERNAL_WS_PORT } from "premiereremote-shared/config";
 import { Statuses } from "./ui.js";
 
-const WEBSOCKET_URL = `ws://localhost:${WS_PORT}`;
-const RECONNECT_INTERVAL = 3000;
+const WEBSOCKET_URL = `ws://localhost:${INTERNAL_WS_PORT}`;
+const RECONNECT_TIMEOUT = 3000;
 
 export class WsClient {
     private ws: WebSocket | null = null;
-    private stopped = false;
 
     constructor(
         private readonly registry: Registry,
@@ -17,23 +16,17 @@ export class WsClient {
 
     start(): void {
         this.ui.reset();
-        this.stopped = false;
         this.connect();
     }
 
-    stop(): void {
-        this.stopped = true;
-        this.ws?.close();
-    }
-
-    async handleMessage(raw: string): Promise<OutgoingMessage | null> {
+    async handleMessage(raw: string): Promise<ClientMessage | null> {
         const rawMessage = this.parseRawMessage(raw);
         if (!rawMessage) return null;
 
-        const incomingMessage = this.parseIncomingMessage(rawMessage);
-        if (!incomingMessage) return null;
+        const serverMessage = this.parseServerMessage(rawMessage);
+        if (!serverMessage) return null;
 
-        const { id, actionId, sourceType } = incomingMessage;
+        const { id, actionId, sourceType } = serverMessage;
         const rawParams = rawMessage.params;
 
         if (
@@ -122,7 +115,6 @@ export class WsClient {
         });
 
         this.ws.addEventListener("close", () => {
-            if (this.stopped) return;
             console.warn(`[core] No WebSocket connection. Reconnecting...`);
             this.ui.setStatus(Statuses.DISCONNECTED);
             this.scheduleReconnect();
@@ -137,10 +129,10 @@ export class WsClient {
     private scheduleReconnect(): void {
         setTimeout(() => {
             this.connect();
-        }, RECONNECT_INTERVAL);
+        }, RECONNECT_TIMEOUT);
     }
 
-    private send(message: OutgoingMessage): void {
+    private send(message: ClientMessage): void {
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
         }
@@ -173,9 +165,9 @@ export class WsClient {
         return parsed as Record<string, unknown>;
     }
 
-    private parseIncomingMessage(
+    private parseServerMessage(
         msg: Record<string, unknown>,
-    ): IncomingMessage | null {
+    ): ServerMessage | null {
         if (
             typeof msg.id !== "string" ||
             typeof msg.actionId !== "string" ||
@@ -187,7 +179,7 @@ export class WsClient {
             );
             return null;
         }
-        return msg as unknown as IncomingMessage;
+        return msg as unknown as ServerMessage;
     }
 
     private buildArgs(
