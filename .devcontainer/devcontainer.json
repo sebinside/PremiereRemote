@@ -1,0 +1,30 @@
+{
+  "name": "PremiereRemote Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": ".devcontainer/post-install.sh",
+  "postAttachCommand": ".devcontainer/post-attach.sh",
+  "initializeCommand": "mkdir -p \"${localEnv:HOME}/.claude\" && touch \"${localEnv:HOME}/.claude.json\"",
+  "forwardPorts": [42400, 42401, 42402, 42403],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
+      "moby": false
+    }
+  },
+  "runArgs": ["--privileged"],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "mounts": [
+    "source=${env:HOME}/.ssh,target=/home/node/.ssh,type=bind,readonly",
+    "source=${env:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,readonly",
+    "source=${env:HOME}/.claude,target=/home/node/.claude,type=bind",
+    "source=${env:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
+  ]
+}
