@@ -1,12 +1,10 @@
 /**
  * @fileoverview This file serves as a playground for testing and experimenting with the Premiere Pro UXP API.
- * As this file provides full Premiere API IntelliSense and debugging capabilities, it is supriror to Adobe's own playground. 
+ * As this file provides full Premiere API IntelliSense and debugging capabilities, it is supriror to Adobe's own playground.
  * It is thus recommended to use this file for testing and experimenting with the API.
  */
 
-import type {
-    premierepro,
-} from "@adobe/premierepro";
+import type { premierepro } from "@adobe/premierepro";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ppro = require("premierepro") as premierepro;
