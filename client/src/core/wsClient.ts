@@ -4,7 +4,8 @@ import { INTERNAL_WS_PORT } from "premiereremote-shared/config";
 import { Statuses } from "./ui.js";
 
 const WEBSOCKET_URL = `ws://localhost:${INTERNAL_WS_PORT}`;
-const RECONNECT_TIMEOUT = 3000;
+const RECONNECT_TIMEOUT = 1000;
+const CONNECT_TIMEOUT = 1000;
 
 export class WsClient {
     private ws: WebSocket | null = null;
@@ -92,9 +93,15 @@ export class WsClient {
     }
 
     private connect(): void {
-        this.ws = new WebSocket(WEBSOCKET_URL);
+        const ws = new WebSocket(WEBSOCKET_URL);
+        this.ws = ws;
+
+        const connectTimer = setTimeout(() => {
+            if (ws.readyState === WebSocket.CONNECTING) ws.close();
+        }, CONNECT_TIMEOUT);
 
         this.ws.addEventListener("open", () => {
+            clearTimeout(connectTimer);
             console.log(
                 `[core] WebSocket client connected to ${WEBSOCKET_URL}`,
             );
@@ -115,6 +122,7 @@ export class WsClient {
         });
 
         this.ws.addEventListener("close", () => {
+            clearTimeout(connectTimer);
             console.warn(`[core] No WebSocket connection. Reconnecting...`);
             this.ui.setStatus(Statuses.DISCONNECTED);
             this.scheduleReconnect();
