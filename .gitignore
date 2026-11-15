@@ -1,6 +1,8 @@
 .vscode/
 .pnpm-store/
 node_modules/
+.env
+.uxp-sync
 
 client/build/
 client/src/generated/
