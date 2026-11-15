@@ -1,0 +1,74 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "test-fixture",
+        "version": "0.0.0"
+    },
+    "paths": {
+        "/test/noArgs": {
+            "get": {
+                "summary": "An action with no parameters.",
+                "operationId": "test/noArgs",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/test/optionalArg": {
+            "get": {
+                "summary": "An action with one optional parameter.",
+                "operationId": "test/optionalArg",
+                "parameters": [
+                    {
+                        "name": "label",
+                        "in": "query",
+                        "required": false,
+                        "description": "An optional label.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/test/requiredArgs": {
+            "get": {
+                "summary": "An action with two required parameters.",
+                "operationId": "test/requiredArgs",
+                "parameters": [
+                    {
+                        "name": "param1",
+                        "in": "query",
+                        "required": true,
+                        "description": "A required string parameter.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "param2",
+                        "in": "query",
+                        "required": true,
+                        "description": "A required number parameter.",
+                        "schema": {
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        }
+    }
+}

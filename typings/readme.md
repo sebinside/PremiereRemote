@@ -1,1 +1,0 @@
-These typings are from: https://github.com/Adobe-CEP/Samples/tree/master/PProPanel/jsx
