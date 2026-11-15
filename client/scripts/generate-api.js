@@ -73,7 +73,14 @@ export function generateApi({ actionsDir, openApiOutPath, registryOutPath }) {
     fs.mkdirSync(path.dirname(openApiOutPath), { recursive: true });
     fs.mkdirSync(path.dirname(registryOutPath), { recursive: true });
 
-    fs.writeFileSync(openApiOutPath, JSON.stringify(openApiDoc, null, 2));
+    // Only write on change, as the server restarts whenever this file is touched.
+    const openApiJson = JSON.stringify(openApiDoc, null, 2);
+    if (
+        !fs.existsSync(openApiOutPath) ||
+        fs.readFileSync(openApiOutPath, "utf8") !== openApiJson
+    ) {
+        fs.writeFileSync(openApiOutPath, openApiJson);
+    }
     fs.writeFileSync(
         registryOutPath,
         registryImports +
